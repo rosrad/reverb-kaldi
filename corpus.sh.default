@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# TODO Adapt these paths to your system
+export wsj0cam=/path/to/REVERB/wsjcam0
+export reverb_lm=/path/to/REVERB/WSJ0_LangMod_REVERB
+export reverb_tr=/path/to/REVERB/REVERB_WSJCAM0_tr_cut
+export reverb_dt=/path/to/REVERB/REVERB_WSJCAM0_dt
+export reverb_et=/path/to/REVERB/REVERB_WSJCAM0_et
+export reverb_real_dt=/path/to/REVERB/MC_WSJ_AV_Dev
+export reverb_real_et=/path/to/REVERB/MC_WSJ_AV_Eval
