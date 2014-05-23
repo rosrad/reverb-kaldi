@@ -1,4 +1,4 @@
-function Generate_mcTrainData(WSJ_dir_name)
+function Generate_mcTrainData_cut(WSJ_dir_name)
 %
 % Input variables:
 %    WSJ_dir_name: string name of user's clean wsjcam0 corpus directory 
@@ -15,7 +15,7 @@ function Generate_mcTrainData(WSJ_dir_name)
 
 % TODO Change this variable to the path where you want to save the 
 % multi-condition training set, and uncomment the line below!
-% save_dir='/path/to/REVERB_WSJCAM0_tr_cut';
+save_dir='/home/14/ren/work/data/reverb14_kaldi_baseline/REVERB_WSJCAM0_tr_cut/';
 
 if nargin<1
    error('Usage: Generate_mcTrainData(WSJCAM0_data_path)  *Note that the input variable WSJCAM0_data_path should indicate the directory name of your clean WSJCAM0 corpus'); 
