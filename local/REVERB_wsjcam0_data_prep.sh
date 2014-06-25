@@ -51,7 +51,7 @@ dataset=REVERB_dt
 # the WSJCAM0 set that the set is based on (tr, dt, ...)
 # this will be used to find the correct transcriptions etc.
 dt_or_x=dt
-
+echo "##### $@"
 if [ ! -z "$2" ]; then
    dataset=$2
 fi
@@ -62,7 +62,7 @@ fi
 # unfortunately, we need a pointer to HTK baseline 
 # since the corpus does NOT contain the data set descriptions 
 # for the REVERB Challenge
-
+echo "###### $dt_or_x"
 taskFileDir=$REVERB_ASR_ROOT/taskFiles/1ch
 #taskFiles=`ls $taskFileDir/*Data_dt_for_*`
 nch=1

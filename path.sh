@@ -2,7 +2,7 @@
 
 # TODO Adapt these paths to your system
 export KALDI_ROOT=/wanglab/kaldi/kaldi-trunk/
-export REVERB_ASR_ROOT=/home/14/ren/work/experiment/reverb_tools_for_asr_ver2.0/
+export REVERB_ASR_ROOT=/home/14/ren/work/experiment/ueda/reverb_tools_for_asr/
 
 
 # DO NOT CHANGE THIS
