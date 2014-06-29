@@ -29,8 +29,8 @@ root=`pwd`
 export PATH=$PATH:$KALDI_ROOT/tools/irstlm/bin
 sph2pipe=$KALDI_ROOT/tools/sph2pipe_v2.5/sph2pipe
 if [ ! -x $sph2pipe ]; then
-   echo "Could not find (or execute) the sph2pipe program at $sph2pipe";
-   exit 1;
+    echo "Could not find (or execute) the sph2pipe program at $sph2pipe";
+    exit 1;
 fi
 
 cd $dir
@@ -49,7 +49,8 @@ fi
 # so that it can be processed in analogy to si_dt for SimData_dt.
 
 # concatenate dt / et transcription
-for set in si_dt si_et_1 si_et_2; do
+# for set in si_dt si_et_1 si_et_2; do
+for set in si_dt ; do
     # this can be done as in the htk baseline
     if [[ "$set" =~ et ]]; then
         find $WSJ/data/{primary,secondary}_microphone/$set -name '*.wv1' | sort > $set.flist
@@ -63,7 +64,7 @@ for set in si_dt si_et_1 si_et_2; do
         | grep '/[a-z0-9]\{3\}/[a-z0-9]\{3\}c02[a-z0-9]\{2\}\.dot$' \
         | xargs cat > $dir/$set.dot
 done
-cat $dir/si_et_1.dot $dir/si_et_2.dot > $dir/si_et.dot
+# cat $dir/si_et_1.dot $dir/si_et_2.dot > $dir/si_et.dot
 
 # for si_tr we need the transcribed utterances (not all)
 si_tr_dot=$WSJ/data/primary_microphone/etc/si_tr.dot
@@ -73,9 +74,9 @@ chmod 644 $dir/si_tr.dot
 
 utts=$(perl -e 'while (<>) { chomp; if (m/\((\w{8})\)/) { print $1, " "; } }' $si_tr_dot)
 for utt in ${utts[@]}; do
-   #echo utt = $utt
-   spk=${utt:0:3}
-   echo $WSJ/data/primary_microphone/si_tr/$spk/$utt.wv1
+    #echo utt = $utt
+    spk=${utt:0:3}
+    echo $WSJ/data/primary_microphone/si_tr/$spk/$utt.wv1
 done > si_tr.flist
 
 nl=`wc -l si_tr.flist`
@@ -83,36 +84,36 @@ nl=${nl% *}
 echo "si_tr: $nl files"
 [ "$nl" -eq 7861 ] || echo "Warning: expected 7861 lines in si_tr.flist, got $nl"
 
-for x in si_tr si_dt si_et_1 si_et_2; do
-   $local/flist2scp.pl $x.flist | sort > ${x}_sph.scp
+for x in si_tr si_dt ; do
+    $local/flist2scp.pl $x.flist | sort > ${x}_sph.scp
 done
-cat si_et_{1,2}_sph.scp > si_et_sph.scp
+# cat si_et_{1,2}_sph.scp > si_et_sph.scp
 
 # for WSJCAM0 training set, there's only one transcript file which contains all training speakers
 # just use that
 $local/convert_transcripts.pl $si_tr_dot > si_tr.trans1 || exit 1
 
 $local/convert_transcripts.pl $dir/si_dt.dot > si_dt.trans1 || exit 1
-$local/convert_transcripts.pl $dir/si_et.dot > si_et.trans1 || exit 1
+# $local/convert_transcripts.pl $dir/si_et.dot > si_et.trans1 || exit 1
 
 
 # Do some basic normalization steps.  At this point we don't remove OOVs--
 # that will be done inside the training scripts, as we'd like to make the
 # data-preparation stage independent of the specific lexicon used.
 noiseword="<NOISE>";
-for x in si_tr si_dt si_et; do
-   cat $x.trans1 | $local/normalize_transcript.pl $noiseword | sort > $x.txt || exit 1;
+for x in si_tr si_dt ; do
+    cat $x.trans1 | $local/normalize_transcript.pl $noiseword | sort > $x.txt || exit 1;
 done
- 
+
 # Create scp's with wav's. (the wv1 in the distribution is not really wav, it is sph.)
-for x in si_tr si_dt si_et; do
-  awk '{printf("%s '$sph2pipe' -f wav %s |\n", $1, $2);}' < ${x}_sph.scp > ${x}_wav.scp
+for x in si_tr si_dt ; do
+    awk '{printf("%s '$sph2pipe' -f wav %s |\n", $1, $2);}' < ${x}_sph.scp > ${x}_wav.scp
 done
 
 # Make the utt2spk and spk2utt files.
-for x in si_tr si_dt si_et; do
-   cat ${x}_sph.scp | awk '{print $1, $1}' > $x.utt2spk
-   cat $x.utt2spk | $utils/utt2spk_to_spk2utt.pl > $x.spk2utt || exit 1;
+for x in si_tr si_dt; do
+    cat ${x}_sph.scp | awk '{print $1, $1}' > $x.utt2spk
+    cat $x.utt2spk | $utils/utt2spk_to_spk2utt.pl > $x.spk2utt || exit 1;
 done
 
 # REVERB language model is bcb05cnp

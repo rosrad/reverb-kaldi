@@ -63,14 +63,16 @@ fi
 # since the corpus does NOT contain the data set descriptions 
 # for the REVERB Challenge
 echo "###### $dt_or_x"
-taskFileDir=$REVERB_ASR_ROOT/taskFiles/1ch
-#taskFiles=`ls $taskFileDir/*Data_dt_for_*`
 nch=1
+taskFileDir=$REVERB_ASR_ROOT/taskFiles/${nch}ch
+#taskFiles=`ls $taskFileDir/*Data_dt_for_*`
+
 if [ "$dt_or_x" = "tr" ]; then
     taskFiles=`ls $taskFileDir/SimData_tr_for_${nch}ch*` || exit 1
 else
-    taskFiles=`ls $taskFileDir/SimData_${dt_or_x}_for_${nch}ch_{far,near}*` || exit 1
+    taskFiles=`ls $taskFileDir/SimData_${dt_or_x}_for_cln_room*` || exit 1
 fi
+
 for taskFile in $taskFiles; do
 
 set=`basename $taskFile`

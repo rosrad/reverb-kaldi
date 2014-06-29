@@ -91,28 +91,28 @@ local/wsjcam0_format_data.sh || exit 1;
 # as the REVERB corpus.
 local/REVERB_wsjcam0_data_prep.sh $reverb_tr REVERB_tr_cut tr || exit 1;
 local/REVERB_wsjcam0_data_prep.sh $reverb_dt REVERB_dt dt     || exit 1;
-local/REVERB_wsjcam0_data_prep.sh $reverb_et REVERB_et et     || exit 1;
+# local/REVERB_wsjcam0_data_prep.sh $reverb_et REVERB_et et     || exit 1;
 
 # Prepare the REVERB "real" dt set from MCWSJAV corpus.
 # This corpus is *never* used for training.
 # This creates the data set called REVERB_Real_dt and its subfolders
-local/REVERB_mcwsjav_data_prep.sh $reverb_real_dt REVERB_Real_dt dt || exit 1;
+# local/REVERB_mcwsjav_data_prep.sh $reverb_real_dt REVERB_Real_dt dt || exit 1;
 # The MLF file exists only once in the corpus, namely in the real_dt directory
 # so we pass it as 4th argument
-local/REVERB_mcwsjav_data_prep.sh $reverb_real_et REVERB_Real_et et $reverb_real_dt/mlf/WSJ.mlf || exit 1;
+# local/REVERB_mcwsjav_data_prep.sh $reverb_real_et REVERB_Real_et et $reverb_real_dt/mlf/WSJ.mlf || exit 1;
 
 
 # Extract MFCC features for clean sets.
 # For the non-clean data sets, this is outsourced to the data preparation scripts.
 mfccdir=mfcc
-for x in si_tr si_dt; do 
+for x in si_tr si_dt; do
  steps/make_mfcc.sh --nj $nj_train \
    data/$x exp/make_mfcc/$x $mfccdir || exit 1;
  steps/compute_cmvn_stats.sh data/$x exp/make_mfcc/$x $mfccdir || exit 1;
 done
 
 fi
-
+echo "===================All Data Prepared!=============================="
 # Train monophone model on clean data (si_tr).
 if [ ! -e exp/mono0a/final.mdl ]; then
     echo "### TRAIN mono0a ###"
