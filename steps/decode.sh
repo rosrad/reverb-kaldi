@@ -93,8 +93,8 @@ if [ ! -z "$transform_dir" ]; then # add transforms to features...
 fi
 
 if [ $stage -le 0 ]; then
-  $cmd $parallel_opts JOB=1:$nj $dir/log/decode.JOB.log \
-    gmm-latgen-faster$thread_string --max-arcs=$max_arcs --max-active=$max_active --beam=$beam --lattice-beam=$latbeam \
+    $cmd $parallel_opts JOB=1:$nj $dir/log/decode.JOB.log \
+    gmm-latgen-faster$thread_string  --max-active=$max_active --beam=$beam --lattice-beam=$latbeam \
     --acoustic-scale=$acwt --allow-partial=true --word-symbol-table=$graphdir/words.txt \
     $model $graphdir/HCLG.fst "$feats" "ark:|gzip -c > $dir/lat.JOB.gz" || exit 1;
 fi

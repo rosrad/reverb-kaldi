@@ -41,7 +41,7 @@ print "$0 @ARGV\n";
 my $system = "tri2b_mc";
 if ($ARGV[0] ne "") { $system = $ARGV[0]; }
 
-for my $dt_or_et ("dt", "et") {
+for my $dt_or_et ("dt") {
 
 print "#### RESULTS FOR $dt_or_et ##### \n\n";
 

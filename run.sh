@@ -44,7 +44,7 @@ nj_bg=8
 nj_tg=4
 
 # set to true if running from scratch
-do_prep=true
+do_prep=false
 
 # set to true if you want the tri2a systems (re-implementation of the HTK baselines)
 do_tri2a=false
@@ -292,9 +292,7 @@ for lm in $lms; do
         recog2=`echo $recog | sed s/_mmi.*//`
         graph=exp/$recog2/graph_$lm
         for dataset in data/REVERB_dt/SimData_dt* \
-                       data/REVERB_et/SimData_et* \
-                       data/REVERB_Real_dt/RealData_dt* \
-                       data/REVERB_Real_et/RealData_et*; do
+                       data/REVERB_Real_dt/RealData_dt*; do
             if [[ $dataset =~ _dt ]]; then
                 pdataset=REVERB_dt
             elif [[ $dataset =~ _et ]]; then
