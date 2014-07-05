@@ -115,9 +115,10 @@ for my $cond (sort keys %wer) {
     }
 }
 
-#print "Avg_Clean($nc)\t", sprintf("%.2f", $avg_wer_disp{"CleanData"}), "\n";
+print "Avg_Clean($nc)\t", sprintf("%.2f", $avg_wer_disp{"CleanData"}), "\n";
 print "Avg_Sim($ns)\t", sprintf("%.2f", $avg_wer_disp{"SimData"}), "\n";
 print "Avg_Real($nr)\t", sprintf("%.2f", $avg_wer_disp{"RealData"}), "\n";
 print "\n\n";
 
 }
+
