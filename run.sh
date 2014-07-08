@@ -47,7 +47,7 @@ nj_tg=4
 do_prep=false
 
 # set to true if you want the tri2a systems (re-implementation of the HTK baselines)
-do_tri2a=false
+do_tri2a=true
 
 
 # The following are the settings determined by Gaussian Process optimization.
@@ -113,6 +113,7 @@ done
 
 fi
 echo "===================All Data Prepared!=============================="
+
 # Train monophone model on clean data (si_tr).
 if [ ! -e exp/mono0a/final.mdl ]; then
     echo "### TRAIN mono0a ###"
@@ -152,7 +153,7 @@ fi
 # The following code trains and evaluates a delta feature recognizer, which is similar to the HTK
 # baseline (but using per-utterance basis fMLLR instead of batch MLLR). This is for reference only.
 if $do_tri2a; then
-
+echo "==================Do Tri2a System!=============================="
 # Train tri2a, which is deltas + delta-deltas, on clean data.
 steps/train_deltas.sh \
   2500 15000 data/si_tr data/lang exp/tri1_ali exp/tri2a || exit 1;
