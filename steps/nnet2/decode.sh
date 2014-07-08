@@ -51,8 +51,7 @@ fi
 graphdir=$1
 data=$2
 dir=$3
-# srcdir=`dirname $dir`; # Assume model directory one level up from decoding directory.
-srcdir=$(dirname $(dirname $dir));
+srcdir=`dirname $dir`; # Assume model directory one level up from decoding directory.
 model=$srcdir/$iter.mdl
 
 for f in $graphdir/HCLG.fst $data/feats.scp $model; do

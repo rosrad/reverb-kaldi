@@ -221,7 +221,7 @@ dnn_extra_opts="--num_epochs 20 --num-epochs-extra 10 --add-layers-period 1 --sh
 # decode REVERB dt using tri2a, clean
 decode_extra_opts=(--num-threads 6 --parallel-opts "-pe smp 6 -l mem_free=4G,ram_free=0.7G")
 for dataset in data/REVERB_dt/SimData_dt*; do
-    decode_dir="exp/tri3a_nnet/decode_dev/decode_bg_5k_REVERB_dt_$(basename ${dataset})"
+    decode_dir="exp/tri3a_nnet/decode_bg_5k_REVERB_dt_$(basename ${dataset})"
     [ ! -d ${decode_dir} ] && mkdir -p ${decode_dir}
     steps/nnet2/decode.sh --nj "$decode_nj" "${decode_extra_opts[@]}" \
         exp/tri2a/graph_bg_5k $dataset $decode_dir \
