@@ -9,7 +9,9 @@ perl summarize_results.pl --lmw=15 tri2a
 # No       No     Yes    No     BG     No
 perl summarize_results.pl --lmw=15 tri2a_mc
 # No       Yes    Yes    No     BG     No
-perl summarize_results.pl --lmw=15 tri2a_mc basis_fmllr
+perl summarize_results.pl --lmw=15 tri2a_mc basis_fmll
+# No       No     Yes    No     BG     No
+perl summarize_results.pl --lmw=15 tri3a_nnet
 # Yes      No     No     No     BG     No
 perl summarize_results.pl --lmw=15 tri2b
 # Yes      No     Yes    No     BG     No
@@ -24,3 +26,5 @@ perl summarize_results.pl --lmw=15 tri2b_mc_mmi_b0.1 basis_fmllr
 perl summarize_results.pl --lm=tg_5k --lmw=15 tri2b_mc_mmi_b0.1 basis_fmllr
 # Yes      Yes    Yes    Yes    TG     Yes
 perl summarize_results.pl --lm=tg_5k --lmw=15 tri2b_mc_mmi_b0.1 mbr_basis_fmllr
+
+

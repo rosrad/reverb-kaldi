@@ -125,6 +125,9 @@ if [ ! -e exp/mono0a/final.mdl ]; then
         data/si_tr data/lang exp/mono0a || exit 1;
 fi
 
+# # generate the model graph using the mono model
+# utils/mkgraph.sh --mono data/lang_test_bg_5k exp/mono0a exp/mono0a/graph_bg_5k
+
 # Align monophones with clean data.
 if [ ! -e exp/mono0a_ali/ali.1.gz ]; then
     echo "### ALIGN mono0a_ali ###"
@@ -179,13 +182,13 @@ if $do_tri2a; then
     utils/mkgraph.sh data/lang_test_bg_5k exp/tri2a_mc exp/tri2a_mc/graph_bg_5k
 
     # decode REVERB dt using tri2a, clean
-    for dataset in data/REVERB_dt/SimData_dt* data/REVERB_Real_dt/RealData_dt*; do
+    for dataset in data/REVERB_dt/SimData_dt* ; do
         steps/decode.sh --nj $nj_bg \
             exp/tri2a/graph_bg_5k $dataset exp/tri2a/decode_bg_5k_REVERB_dt_`basename $dataset` || exit 1;
     done
 
     # decode REVERB dt using tri2a, mc
-    for dataset in data/REVERB_dt/SimData_dt* data/REVERB_Real_dt/RealData_dt*; do
+    for dataset in data/REVERB_dt/SimData_dt*; do
         steps/decode.sh --nj $nj_bg \
             exp/tri2a_mc/graph_bg_5k $dataset exp/tri2a_mc/decode_bg_5k_REVERB_dt_`basename $dataset` || exit 1;
     done
@@ -213,27 +216,28 @@ echo ===========================================================================
 dnn_mem_reqs="mem_free=1.0G,ram_free=0.2G"
 dnn_extra_opts="--num_epochs 20 --num-epochs-extra 10 --add-layers-period 1 --shrink-interval 3"
 
-# steps/nnet2/train_tanh.sh --mix-up 5000 --initial-learning-rate 0.015 \
-#     --final-learning-rate 0.002 --num-hidden-layers 2  \
-#     --num-jobs-nnet "$train_nj" "${dnn_train_extra_opts[@]}" \
-#     data/si_tr data/lang exp/tri2a_ali exp/tri3a_nnet
+steps/nnet2/train_tanh.sh --mix-up 5000 --initial-learning-rate 0.015 \
+    --final-learning-rate 0.002 --num-hidden-layers 2  \
+    --num-jobs-nnet "$train_nj" "${dnn_train_extra_opts[@]}" \
+    data/si_tr data/lang exp/tri2a_mc exp/tri3a_nnet
 
 # decode REVERB dt using tri2a, clean
 decode_extra_opts=(--num-threads 6 --parallel-opts "-pe smp 6 -l mem_free=4G,ram_free=0.7G")
 for dataset in data/REVERB_dt/SimData_dt*; do
     decode_dir="exp/tri3a_nnet/decode_bg_5k_REVERB_dt_$(basename ${dataset})"
     [ ! -d ${decode_dir} ] && mkdir -p ${decode_dir}
-    steps/nnet2/decode.sh --nj "$decode_nj" "${decode_extra_opts[@]}" \
-        exp/tri2a/graph_bg_5k $dataset $decode_dir \
+    steps/nnet2/decode.sh --nj "$decode_nj" --num-threads 6 \
+        exp/tri2a_mc/graph_bg_5k \
+        $dataset $decode_dir \
         | tee ${decode_dir}/decode.log
 done
 echo ============================================================================
 echo "                    Getting Results [see RESULTS file]                    "
 echo ============================================================================
 
-# for x in exp/*/decode*; do
-#     [ -d $x ] && grep WER $x/wer_* | utils/best_wer.sh
-# done 
+for x in exp/*/decode_bg_5k_REVERB_dt_SimData_dt_for_cln_room1*; do
+    [ -d $x ] && grep WER $x/wer_* | utils/best_wer.sh
+done 
 
 echo ============================================================================
 echo "Finished successfully on" `date`
