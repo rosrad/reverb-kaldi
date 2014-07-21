@@ -3,7 +3,7 @@ echo ===========================================================================
 echo "                    Getting Results [see RESULTS file]                    "
 echo ============================================================================
 
-for x in exp/*tri2*/*; do
+for x in exp/*tri2*/*decode*; do
     [ -d $x ] && grep WER $x/wer_* | utils/best_wer.sh
 done 
 

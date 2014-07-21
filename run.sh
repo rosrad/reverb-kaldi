@@ -24,7 +24,7 @@ if [ ! -e path.sh ] || [ ! -e corpus.sh ]; then
 fi
 
 . ./cmd.sh 
-           
+
 . ./corpus.sh
 
 # LDA context size (left/right) (4 is default)
@@ -48,7 +48,8 @@ do_prep=false
 
 # set to true if you want the tri2a systems (re-implementation of the HTK baselines)
 do_tri2a=true
-
+# set to true if you want to train the tri2a model
+tri2a_mdl_ret=false
 
 # The following are the settings determined by Gaussian Process optimization.
 # However, they are not used in the final system.
@@ -68,48 +69,48 @@ mct_ngauss=45000
 
 if $do_prep; then
 
-# Prepare clean data and language model.
-local/wsj0cam_data_prep.sh $wsj0cam $reverb_lm || exit 1
+    # Prepare clean data and language model.
+    local/wsj0cam_data_prep.sh $wsj0cam $reverb_lm || exit 1
 
-# Prepare merged BEEP/CMU dictionary.
-local/wsj_prepare_beep_dict.sh || exit 1;
+    # Prepare merged BEEP/CMU dictionary.
+    local/wsj_prepare_beep_dict.sh || exit 1;
 
-# Prepare wordlists, etc.
-utils/prepare_lang.sh data/local/dict "<SPOKEN_NOISE>" data/local/lang_tmp data/lang || exit 1;
+    # Prepare wordlists, etc.
+    utils/prepare_lang.sh data/local/dict "<SPOKEN_NOISE>" data/local/lang_tmp data/lang || exit 1;
 
-# Prepare directory structure for clean data. Apply some language model fixes.
-local/wsjcam0_format_data.sh || exit 1;
+    # Prepare directory structure for clean data. Apply some language model fixes.
+    local/wsjcam0_format_data.sh || exit 1;
 
-# Now it's getting more interesting.
-# Prepare the multi-condition training data and the REVERB dt set.
-# This also extracts MFCC features.
-# This creates the data sets called REVERB_tr_cut and REVERB_dt.
-# If you have processed waveforms, this is a good starting point to integrate them.
-# For example, you could have something like
-# local/REVERB_wsjcam0_data_prep.sh /path/to/processed/REVERB_WSJCAM0_dt processed_REVERB_dt dt
-# The first argument is supposed to point to a folder that has the same structure
-# as the REVERB corpus.
-local/REVERB_wsjcam0_data_prep.sh $reverb_tr REVERB_tr_cut tr || exit 1;
-local/REVERB_wsjcam0_data_prep.sh $reverb_dt REVERB_dt dt     || exit 1;
-# local/REVERB_wsjcam0_data_prep.sh $reverb_et REVERB_et et     || exit 1;
+    # Now it's getting more interesting.
+    # Prepare the multi-condition training data and the REVERB dt set.
+    # This also extracts MFCC features.
+    # This creates the data sets called REVERB_tr_cut and REVERB_dt.
+    # If you have processed waveforms, this is a good starting point to integrate them.
+    # For example, you could have something like
+    # local/REVERB_wsjcam0_data_prep.sh /path/to/processed/REVERB_WSJCAM0_dt processed_REVERB_dt dt
+    # The first argument is supposed to point to a folder that has the same structure
+    # as the REVERB corpus.
+    local/REVERB_wsjcam0_data_prep.sh $reverb_tr REVERB_tr_cut tr || exit 1;
+    local/REVERB_wsjcam0_data_prep.sh $reverb_dt REVERB_dt dt     || exit 1;
+    # local/REVERB_wsjcam0_data_prep.sh $reverb_et REVERB_et et     || exit 1;
 
-# Prepare the REVERB "real" dt set from MCWSJAV corpus.
-# This corpus is *never* used for training.
-# This creates the data set called REVERB_Real_dt and its subfolders
-# local/REVERB_mcwsjav_data_prep.sh $reverb_real_dt REVERB_Real_dt dt || exit 1;
-# The MLF file exists only once in the corpus, namely in the real_dt directory
-# so we pass it as 4th argument
-# local/REVERB_mcwsjav_data_prep.sh $reverb_real_et REVERB_Real_et et $reverb_real_dt/mlf/WSJ.mlf || exit 1;
+    # Prepare the REVERB "real" dt set from MCWSJAV corpus.
+    # This corpus is *never* used for training.
+    # This creates the data set called REVERB_Real_dt and its subfolders
+    # local/REVERB_mcwsjav_data_prep.sh $reverb_real_dt REVERB_Real_dt dt || exit 1;
+    # The MLF file exists only once in the corpus, namely in the real_dt directory
+    # so we pass it as 4th argument
+    # local/REVERB_mcwsjav_data_prep.sh $reverb_real_et REVERB_Real_et et $reverb_real_dt/mlf/WSJ.mlf || exit 1;
 
 
-# Extract MFCC features for clean sets.
-# For the non-clean data sets, this is outsourced to the data preparation scripts.
-mfccdir=mfcc
-for x in si_tr si_dt; do
- steps/make_mfcc.sh --nj $nj_train \
-   data/$x exp/make_mfcc/$x $mfccdir || exit 1;
- steps/compute_cmvn_stats.sh data/$x exp/make_mfcc/$x $mfccdir || exit 1;
-done
+    # Extract MFCC features for clean sets.
+    # For the non-clean data sets, this is outsourced to the data preparation scripts.
+    mfccdir=mfcc
+    for x in si_tr si_dt; do
+        steps/make_mfcc.sh --nj $nj_train \
+            data/$x exp/make_mfcc/$x $mfccdir || exit 1;
+        steps/compute_cmvn_stats.sh data/$x exp/make_mfcc/$x $mfccdir || exit 1;
+    done
 
 fi
 echo "===================All Data Prepared!=============================="
@@ -118,14 +119,14 @@ echo "===================All Data Prepared!=============================="
 if [ ! -e exp/mono0a/final.mdl ]; then
     echo "### TRAIN mono0a ###"
     steps/train_mono.sh --boost-silence 1.25 --nj $nj_train \
-      data/si_tr data/lang exp/mono0a || exit 1;
+        data/si_tr data/lang exp/mono0a || exit 1;
 fi
 
 # Align monophones with clean data.
 if [ ! -e exp/mono0a_ali/ali.1.gz ]; then
     echo "### ALIGN mono0a_ali ###"
     steps/align_si.sh --boost-silence 1.25 --nj $nj_train \
-       data/si_tr data/lang exp/mono0a exp/mono0a_ali || exit 1;
+        data/si_tr data/lang exp/mono0a exp/mono0a_ali || exit 1;
 fi
 
 # Create first triphone recognizer.
@@ -146,58 +147,60 @@ if [ ! -e exp/tri1_ali/ali.1.gz ]; then
     echo "### ALIGN tri1_ali ###"
     # Re-align triphones.
     steps/align_si.sh --nj $nj_train \
-      data/si_tr data/lang exp/tri1 exp/tri1_ali || exit 1;
+        data/si_tr data/lang exp/tri1 exp/tri1_ali || exit 1;
 fi
 
 
 # The following code trains and evaluates a delta feature recognizer, which is similar to the HTK
 # baseline (but using per-utterance basis fMLLR instead of batch MLLR). This is for reference only.
 if $do_tri2a; then
-echo "==================Do Tri2a System!=============================="
-# Train tri2a, which is deltas + delta-deltas, on clean data.
-steps/train_deltas.sh \
-  2500 15000 data/si_tr data/lang exp/tri1_ali exp/tri2a || exit 1;
+    echo "==================Do Tri2a System!=============================="
+    if $tri2a_mdl_ret ; then 
+        echo "############ trian the tri2a  model #############"
+        # Train tri2a, which is deltas + delta-deltas, on clean data.
+        steps/train_deltas.sh \
+            2500 15000 data/si_tr data/lang exp/tri1_ali exp/tri2a || exit 1;
 
-# Re-align triphones using clean data. This gives a smallish performance gain.
-steps/align_si.sh --nj $nj_train \
-  data/si_tr data/lang exp/tri2a exp/tri2a_ali || exit 1;
+        # Re-align triphones using clean data. This gives a smallish performance gain.
+        steps/align_si.sh --nj $nj_train \
+            data/si_tr data/lang exp/tri2a exp/tri2a_ali || exit 1;
 
-# Train a multi-condition triphone recognizer.
-# This uses alignments on *clean* data, which is allowed for REVERB.
-# However, we have to use the "cut" version so that the length of the 
-# waveforms match.
-# It is actually asserted by the Challenge that clean and multi-condition waves are aligned.
-steps/train_deltas.sh \
-  2500 15000 data/REVERB_tr_cut/SimData_tr_for_1ch_A data/lang exp/tri2a_ali exp/tri2a_mc || exit 1;
+        # Train a multi-condition triphone recognizer.
+        # This uses alignments on *clean* data, which is allowed for REVERB.
+        # However, we have to use the "cut" version so that the length of the 
+        # waveforms match.
+        # It is actually asserted by the Challenge that clean and multi-condition waves are aligned.
+        steps/train_deltas.sh \
+            2500 15000 data/REVERB_tr_cut/SimData_tr_for_1ch_A data/lang exp/tri2a_ali exp/tri2a_mc || exit 1;
 
-# Prepare clean and mc tri2a models for decoding.
-utils/mkgraph.sh data/lang_test_bg_5k exp/tri2a exp/tri2a/graph_bg_5k
-utils/mkgraph.sh data/lang_test_bg_5k exp/tri2a_mc exp/tri2a_mc/graph_bg_5k
+        # Prepare clean and mc tri2a models for decoding.
+        utils/mkgraph.sh data/lang_test_bg_5k exp/tri2a exp/tri2a/graph_bg_5k
+        utils/mkgraph.sh data/lang_test_bg_5k exp/tri2a_mc exp/tri2a_mc/graph_bg_5k
+    fi
+    # decode REVERB dt using tri2a, clean
+    for dataset in data/REVERB_dt/SimData_dt* ; do
+        steps/decode.sh --nj $nj_bg \
+            exp/tri2a/graph_bg_5k $dataset exp/tri2a/decode_bg_5k_REVERB_dt_`basename $dataset` || exit 1;
+    done
 
-# decode REVERB dt using tri2a, clean
-for dataset in data/REVERB_dt/SimData_dt* data/REVERB_Real_dt/RealData_dt*; do
-  steps/decode.sh --nj $nj_bg \
-    exp/tri2a/graph_bg_5k $dataset exp/tri2a/decode_bg_5k_REVERB_dt_`basename $dataset` || exit 1;
-done
+    # decode REVERB dt using tri2a, mc
+    for dataset in data/REVERB_dt/SimData_dt* ; do
+        steps/decode.sh --nj $nj_bg \
+            exp/tri2a_mc/graph_bg_5k $dataset exp/tri2a_mc/decode_bg_5k_REVERB_dt_`basename $dataset` || exit 1;
+    done
 
-# decode REVERB dt using tri2a, mc
-for dataset in data/REVERB_dt/SimData_dt* data/REVERB_Real_dt/RealData_dt*; do
-  steps/decode.sh --nj $nj_bg \
-    exp/tri2a_mc/graph_bg_5k $dataset exp/tri2a_mc/decode_bg_5k_REVERB_dt_`basename $dataset` || exit 1;
-done
+    # basis fMLLR for tri2a_mc system
+    # This computes a transform for every training utterance and computes a basis from that.
+    steps/get_fmllr_basis.sh --per-utt true data/REVERB_tr_cut/SimData_tr_for_1ch_A data/lang exp/tri2a_mc || exit 1;
 
-# basis fMLLR for tri2a_mc system
-# This computes a transform for every training utterance and computes a basis from that.
-steps/get_fmllr_basis.sh --per-utt true data/REVERB_tr_cut/SimData_tr_for_1ch_A data/lang exp/tri2a_mc || exit 1;
-
-# Recognition using fMLLR adaptation (per-utterance processing).
-for dataset in data/REVERB_dt/SimData_dt* data/REVERB_Real_dt/RealData_dt*; do
-  steps/decode_basis_fmllr.sh --nj $nj_bg \
-    exp/tri2a_mc/graph_bg_5k $dataset exp/tri2a_mc/decode_basis_fmllr_bg_5k_REVERB_dt_`basename $dataset` || exit 1;
-done
+    # Recognition using fMLLR adaptation (per-utterance processing).
+    for dataset in data/REVERB_dt/SimData_dt* ; do
+        steps/decode_basis_fmllr.sh --nj $nj_bg \
+            exp/tri2a_mc/graph_bg_5k $dataset exp/tri2a_mc/decode_basis_fmllr_bg_5k_REVERB_dt_`basename $dataset` || exit 1;
+    done
 
 
-exit
+    exit
 
 fi # train tri2a, tri2a_mc
 
@@ -206,28 +209,28 @@ fi # train tri2a, tri2a_mc
 if [ ! -e exp/tri2b/final.mdl ]; then
     echo "### TRAIN tri2b ###"
     steps/train_lda_mllt.sh \
-       --splice-opts "--left-context=$context_size --right-context=$context_size" \
-       2500 15000 data/si_tr data/lang exp/tri1_ali exp/tri2b || exit 1;
+        --splice-opts "--left-context=$context_size --right-context=$context_size" \
+        2500 15000 data/si_tr data/lang exp/tri1_ali exp/tri2b || exit 1;
 fi
 
 # tri2b (LDA-MLLT system) with multi-condition training, using default parameters.
 if [ ! -e exp/tri2b_mc/final.mdl ]; then
     echo "### TRAIN tri2b_mc ###"
     steps/train_lda_mllt.sh \
-       --splice-opts "--left-context=$context_size --right-context=$context_size" \
-       2500 15000 data/REVERB_tr_cut/SimData_tr_for_1ch_A data/lang exp/tri1_ali exp/tri2b_mc || exit 1;
+        --splice-opts "--left-context=$context_size --right-context=$context_size" \
+        2500 15000 data/REVERB_tr_cut/SimData_tr_for_1ch_A data/lang exp/tri1_ali exp/tri2b_mc || exit 1;
 fi
 
 
 # tri2c (LDA-MLLT system) with multi-condition training, optimized parameters.
 # Disabled by default -- it only improves slightly, and tends to overfit.
 if false; then
-if [ ! -e exp/tri2c_mc/final.mdl ]; then
-    echo "### TRAIN tri2c_mc ###"
-    steps/train_lda_mllt.sh \
-       --splice-opts "--left-context=$mct_lda_left_context --right-context=$mct_lda_right_context" \
-       $mct_nstates $mct_ngauss data/REVERB_tr_cut/SimData_tr_for_1ch_A data/lang exp/tri1_ali exp/tri2c_mc || exit 1;
-fi
+    if [ ! -e exp/tri2c_mc/final.mdl ]; then
+        echo "### TRAIN tri2c_mc ###"
+        steps/train_lda_mllt.sh \
+            --splice-opts "--left-context=$mct_lda_left_context --right-context=$mct_lda_right_context" \
+            $mct_nstates $mct_ngauss data/REVERB_tr_cut/SimData_tr_for_1ch_A data/lang exp/tri1_ali exp/tri2c_mc || exit 1;
+    fi
 fi
 
 
@@ -253,7 +256,7 @@ for base_recog in tri2b_mc; do
     # get alignments from base recognizer
     if [ ! -e exp/${base_recog}_ali/ali.1.gz ]; then
         steps/align_si.sh --nj $nj_train \
-          --use-graphs true data/REVERB_tr_cut/SimData_tr_for_1ch_A data/lang exp/$base_recog exp/${base_recog}_ali || exit 1;
+            --use-graphs true data/REVERB_tr_cut/SimData_tr_for_1ch_A data/lang exp/$base_recog exp/${base_recog}_ali || exit 1;
     fi
 
     # get lattices from base recognizer
@@ -262,17 +265,17 @@ for base_recog in tri2b_mc; do
     if [ ! -e exp/$denlats_dir/.done.1 ]; then
         # DT with multi-condition data ...
         steps/make_denlats.sh --sub-split $subsplit --nj $nj_train \
-          data/REVERB_tr_cut/SimData_tr_for_1ch_A data/lang exp/$base_recog exp/$denlats_dir || exit 1;
+            data/REVERB_tr_cut/SimData_tr_for_1ch_A data/lang exp/$base_recog exp/$denlats_dir || exit 1;
     fi
 
     # boosted MMI training
     if [ ! -e exp/$bmmi_recog/final.mdl ]; then
         steps/train_mmi.sh --boost 0.1 \
-          data/REVERB_tr_cut/SimData_tr_for_1ch_A \
-          data/lang \
-          exp/${base_recog}_ali \
-          exp/$denlats_dir \
-          exp/$bmmi_recog  || exit 1;
+            data/REVERB_tr_cut/SimData_tr_for_1ch_A \
+            data/lang \
+            exp/${base_recog}_ali \
+            exp/$denlats_dir \
+            exp/$bmmi_recog  || exit 1;
         cp exp/$base_recog/ali.* exp/$bmmi_recog
     fi
 
@@ -292,8 +295,7 @@ for lm in $lms; do
         # The graph from the ML directory is used in recipe
         recog2=`echo $recog | sed s/_mmi.*//`
         graph=exp/$recog2/graph_$lm
-        for dataset in data/REVERB_dt/SimData_dt* \
-                       data/REVERB_Real_dt/RealData_dt*; do
+        for dataset in data/REVERB_dt/SimData_dt* ; do
             if [[ $dataset =~ _dt ]]; then
                 pdataset=REVERB_dt
             elif [[ $dataset =~ _et ]]; then
