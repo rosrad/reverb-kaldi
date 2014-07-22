@@ -70,7 +70,7 @@ taskFileDir=$REVERB_ASR_ROOT/taskFiles/${nch}ch
 if [ "$dt_or_x" = "tr" ]; then
     taskFiles=`ls $taskFileDir/SimData_tr_for_${nch}ch*` || exit 1
 else
-    taskFiles=`ls $taskFileDir/SimData_${dt_or_x}_for_cln_room*` || exit 1
+    taskFiles=`ls $taskFileDir/SimData_${dt_or_x}*` || exit 1
 fi
 
 for taskFile in $taskFiles; do

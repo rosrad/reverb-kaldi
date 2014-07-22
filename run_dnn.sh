@@ -162,51 +162,52 @@ fi
 
 # The following code trains and evaluates a delta feature recognizer, which is similar to the HTK
 # baseline (but using per-utterance basis fMLLR instead of batch MLLR). This is for reference only.
-if $models_retrain; then
-    echo "==================Do Tri2a System!=============================="
-    # Train tri2a, which is deltas + delta-deltas, on clean data.
-    steps/train_deltas.sh \
-        2500 15000 data/si_tr data/lang exp/tri1_ali exp/tri2a || exit 1;
+if $do_tri2a ;then
+    if $models_retrain; then
+        echo "==================Do Tri2a System!=============================="
+        # Train tri2a, which is deltas + delta-deltas, on clean data.
+        steps/train_deltas.sh \
+            2500 15000 data/si_tr data/lang exp/tri1_ali exp/tri2a || exit 1;
 
-    # Re-align triphones using clean data. This gives a smallish performance gain.
-    steps/align_si.sh --nj $nj_train \
-        data/si_tr data/lang exp/tri2a exp/tri2a_ali || exit 1;
+        # Re-align triphones using clean data. This gives a smallish performance gain.
+        steps/align_si.sh --nj $nj_train \
+            data/si_tr data/lang exp/tri2a exp/tri2a_ali || exit 1;
 
-    # Train a multi-condition triphone recognizer.
-    # This uses alignments on *clean* data, which is allowed for REVERB.
-    # However, we have to use the "cut" version so that the length of the 
-    # waveforms match.
-    # It is actually asserted by the Challenge that clean and multi-condition waves are aligned.
-    steps/train_deltas.sh \
-        2500 15000 data/REVERB_tr_cut/SimData_tr_for_1ch_A data/lang exp/tri2a_ali exp/tri2a_mc || exit 1;
+        # Train a multi-condition triphone recognizer.
+        # This uses alignments on *clean* data, which is allowed for REVERB.
+        # However, we have to use the "cut" version so that the length of the 
+        # waveforms match.
+        # It is actually asserted by the Challenge that clean and multi-condition waves are aligned.
+        steps/train_deltas.sh \
+            2500 15000 data/REVERB_tr_cut/SimData_tr_for_1ch_A data/lang exp/tri2a_ali exp/tri2a_mc || exit 1;
 
-    # Prepare clean and mc tri2a models for decoding.
-    utils/mkgraph.sh data/lang_test_bg_5k exp/tri2a exp/tri2a/graph_bg_5k
-    utils/mkgraph.sh data/lang_test_bg_5k exp/tri2a_mc exp/tri2a_mc/graph_bg_5k
+        # Prepare clean and mc tri2a models for decoding.
+        utils/mkgraph.sh data/lang_test_bg_5k exp/tri2a exp/tri2a/graph_bg_5k
+        utils/mkgraph.sh data/lang_test_bg_5k exp/tri2a_mc exp/tri2a_mc/graph_bg_5k
+    fi
+
+    # decode REVERB dt using tri2a, clean
+    for dataset in data/REVERB_dt/SimData_dt* ; do
+        steps/decode.sh --nj $nj_bg \
+            exp/tri2a/graph_bg_5k $dataset exp/tri2a/decode_bg_5k_REVERB_dt_`basename $dataset` || exit 1;
+    done
+
+    # decode REVERB dt using tri2a, mc
+    for dataset in data/REVERB_dt/SimData_dt*; do
+        steps/decode.sh --nj $nj_bg \
+            exp/tri2a_mc/graph_bg_5k $dataset exp/tri2a_mc/decode_bg_5k_REVERB_dt_`basename $dataset` || exit 1;
+    done
+
+    # # basis fMLLR for tri2a_mc system
+    # # This computes a transform for every training utterance and computes a basis from that.
+    # steps/get_fmllr_basis.sh --per-utt true data/REVERB_tr_cut/SimData_tr_for_1ch_A data/lang exp/tri2a_mc || exit 1;
+
+    # # Recognition using fMLLR adaptation (per-utterance processing).
+    # for dataset in data/REVERB_dt/SimData_dt* ; do
+    #     steps/decode_basis_fmllr.sh --nj $nj_bg \
+    #         exp/tri2a_mc/graph_bg_5k $dataset exp/tri2a_mc/decode_basis_fmllr_bg_5k_REVERB_dt_`basename $dataset` || exit 1;
+    # done
 fi
-
-# decode REVERB dt using tri2a, clean
-for dataset in data/REVERB_dt/SimData_dt* ; do
-    steps/decode.sh --nj $nj_bg \
-        exp/tri2a/graph_bg_5k $dataset exp/tri2a/decode_bg_5k_REVERB_dt_`basename $dataset` || exit 1;
-done
-
-# decode REVERB dt using tri2a, mc
-for dataset in data/REVERB_dt/SimData_dt*; do
-    steps/decode.sh --nj $nj_bg \
-        exp/tri2a_mc/graph_bg_5k $dataset exp/tri2a_mc/decode_bg_5k_REVERB_dt_`basename $dataset` || exit 1;
-done
-
-# basis fMLLR for tri2a_mc system
-# This computes a transform for every training utterance and computes a basis from that.
-steps/get_fmllr_basis.sh --per-utt true data/REVERB_tr_cut/SimData_tr_for_1ch_A data/lang exp/tri2a_mc || exit 1;
-
-# Recognition using fMLLR adaptation (per-utterance processing).
-for dataset in data/REVERB_dt/SimData_dt* data/REVERB_Real_dt/RealData_dt*; do
-    steps/decode_basis_fmllr.sh --nj $nj_bg \
-        exp/tri2a_mc/graph_bg_5k $dataset exp/tri2a_mc/decode_basis_fmllr_bg_5k_REVERB_dt_`basename $dataset` || exit 1;
-done
-
 echo ============================================================================
 echo "                    DNN Hybrid Training & Decoding                        "
 echo ============================================================================
