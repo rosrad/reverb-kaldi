@@ -50,9 +50,9 @@ nj_tg=4
 do_prep=false
 
 # set to true if you want the tri2a systems (re-implementation of the HTK baselines)
-do_tri2a=false
-models_retrain=false
-
+do_tri2a=flase
+models_retrain=true
+regraph_tri=false
 
 # The following are the settings determined by Gaussian Process optimization.
 # However, they are not used in the final system.
@@ -117,8 +117,10 @@ if $do_prep; then
     done
 
 fi
-echo "######### prepare REVERB_DT feature ###########"
-local/REVERB_wsjcam0_data_prep.sh $reverb_dt REVERB_dt dt     || exit 1;
+
+# echo "######### prepare REVERB_DT feature ###########"
+# local/REVERB_wsjcam0_data_prep.sh $reverb_dt REVERB_dt dt     || exit 1;
+
 echo "===================All Data Prepared!=============================="
 
 # Train monophone model on clean data (si_tr).
@@ -159,6 +161,16 @@ if [ ! -e exp/tri1_ali/ali.1.gz ]; then
         data/si_tr data/lang exp/tri1 exp/tri1_ali || exit 1;
 fi
 
+if $regraph_tri ; then
+    rec_model="tri1"
+    utils/mkgraph.sh data/lang_test_bg_5k exp/${rec_model} exp/${rec_model}/graph_bg_5k || exit 1;
+    # decode REVERB dt using tri2a, clean
+    for dataset in data/REVERB_dt/SimData_dt* ; do
+        steps/decode.sh --nj $nj_bg \
+            exp/${rec_model}/graph_bg_5k $dataset exp/${rec_model}/decode_bg_5k_REVERB_dt_`basename $dataset` || exit 1;
+    done
+
+fi
 
 # The following code trains and evaluates a delta feature recognizer, which is similar to the HTK
 # baseline (but using per-utterance basis fMLLR instead of batch MLLR). This is for reference only.
@@ -213,13 +225,13 @@ echo "                    DNN Hybrid Training & Decoding                        
 echo ============================================================================
 
 # DNN hybrid system training parameters
-dst_exp="tri2a_mc_net2"
+dst_exp="tri1_net2_mc"
 dnn_extra_opts="--num_epochs 20 --num-epochs-extra 10 --add-layers-period 1 --shrink-interval 3"
 if $models_retrain; then
     steps/nnet2/train_tanh.sh --mix-up 5000 --initial-learning-rate 0.015 \
         --final-learning-rate 0.002 --num-hidden-layers 2  \
         --num-jobs-nnet "$train_nj" "${dnn_train_extra_opts[@]}" \
-        data/si_tr data/lang exp/tri2a_mc exp/${dst_exp}
+        data/REVERB_tr_cut/SimData_tr_for_1ch_A data/lang exp/tri1_ali exp/${dst_exp}
 fi
 
 # decode REVERB dt using tri2a, clean
@@ -227,7 +239,7 @@ for dataset in data/REVERB_dt/SimData_dt*; do
     decode_dir="exp/${dst_exp}/decode_bg_5k_REVERB_dt_$(basename ${dataset})"
     [ ! -d ${decode_dir} ] && mkdir -p ${decode_dir}
     steps/nnet2/decode.sh --nj "$decode_nj" --num-threads 6 \
-        exp/tri2a_mc/graph_bg_5k \
+        exp/tri1/graph_bg_5k \
         $dataset $decode_dir \
         | tee ${decode_dir}/decode.log
 done
@@ -236,7 +248,7 @@ echo ===========================================================================
 echo "                    Getting Results [see RESULTS file]                    "
 echo ============================================================================
 
-for x in exp/*/decode_bg_5k_REVERB_dt_SimData_dt_for_cln_room*; do
+for x in exp/*/decode_bg_5k_REVERB_dt_SimData_*; do
     [ -d $x ] && grep WER $x/wer_* | utils/best_wer.sh
 done 
 
