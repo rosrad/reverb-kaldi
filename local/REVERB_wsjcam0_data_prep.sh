@@ -47,7 +47,7 @@ fi
 
 # the name of the dataset to be created
 dataset=REVERB_dt
-
+datatype=${4:-"SimData"}
 # the WSJCAM0 set that the set is based on (tr, dt, ...)
 # this will be used to find the correct transcriptions etc.
 dt_or_x=dt
@@ -63,14 +63,12 @@ fi
 # since the corpus does NOT contain the data set descriptions 
 # for the REVERB Challenge
 echo "###### $dt_or_x"
-nch=1
-taskFileDir=$REVERB_ASR_ROOT/taskFiles/${nch}ch
-#taskFiles=`ls $taskFileDir/*Data_dt_for_*`
+taskFileDir=${root}/taskFiles/
 
 if [ "$dt_or_x" = "tr" ]; then
     taskFiles=`ls $taskFileDir/SimData_tr_for_${nch}ch*` || exit 1
 else
-    taskFiles=`ls $taskFileDir/SimData_${dt_or_x}*` || exit 1
+    taskFiles=$(ls $taskFileDir/${datatype}_${dt_or_x}_for*) || exit 1
 fi
 
 for taskFile in $taskFiles; do
