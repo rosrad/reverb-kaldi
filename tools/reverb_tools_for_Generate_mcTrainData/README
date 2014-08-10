@@ -1,0 +1,154 @@
+-------------------------------------------------------------------------------
+README file for the tool to generate multi-condition training data
+
+For any inquiries regarding this document and scripts, please contact us via 
+REVERB-challenge@lab.ntt.co.jp
+-------------------------------------------------------------------------------
+
+This directory/folder contains tools to generate multi-condition training data 
+(in WAV format) with MATLAB (the scripts has been tested with matlab-2010a).
+
+This document explains :
+(A) procedures to generate the data, 
+(B) directory structure that you must have to run the script.
+
+-------------------------------------
+(A) Procedure to generate the data
+-------------------------------------
+
+The followings are the steps to generate the multi-condition training data.
+
+  0. After uncompressing reverb_tools_for_Generate_mcTrainData.tgz, keep the directory structure as it is.
+  
+  1. At any directory, 
+     install the ASR baseline system distributed at http://reverb2014.dereverberation.com/download.html
+     or
+     download and intall "NIST SPHERE software" distributed at ftp://jaguar.ncsl.nist.gov/pub/sphere_2.6a.tgz  
+
+  2. Copy the following 2 functions to ./bin/ 
+      - h_strip  : copy this function from reverb_tools_for_asr/tools/SPHERE/nist/bin/h_strip or nist/bin/h_strip
+      - w_decode : copy this function from reverb_tools_for_asr/tools/SPHERE/nist/bin/w_decode or nist/bin/w_decode
+
+  3. Launch MATLAB, and change your directory to this folder (the folder where you have this README file).
+  
+  4. Run the function called Generate_mcTrainData.m on Matlab
+     according to the following example.
+     The script will generate multi-condition data under ./REVERB_WSJCAM0_tr/.      
+      
+     >>Generate_mcTrainData(WSJCAM0_data_path)
+        *Note:
+         WSJCAM0_data_path: string indicating the directory of the original (clean) WSJCAM0
+                            See the following page for how to obtain the data.
+                            http://reverb2014.dereverberation.com/data.html
+        *Example of function usage
+        >>Generate_mcTrainData('/data/corpus/wsjcam0/')
+
+   5. Done! (The script will run about an hour to generate all the data)
+
+-------------------------------------
+(B) Directory structure
+-------------------------------------
+
+The following are the items and the directory structure that you should have in order to run the above 4th step.
+
+.
+|-- Generate_mcTrainData.m
+|-- NOISE
+|   |-- Noise_LargeRoom1_1.wav
+|   |-- Noise_LargeRoom1_10.wav
+|   |-- Noise_LargeRoom1_2.wav
+|   |-- Noise_LargeRoom1_3.wav
+|   |-- Noise_LargeRoom1_4.wav
+|   |-- Noise_LargeRoom1_5.wav
+|   |-- Noise_LargeRoom1_6.wav
+|   |-- Noise_LargeRoom1_7.wav
+|   |-- Noise_LargeRoom1_8.wav
+|   |-- Noise_LargeRoom1_9.wav
+|   |-- Noise_LargeRoom2_1.wav
+|   |-- Noise_LargeRoom2_10.wav
+|   |-- Noise_LargeRoom2_2.wav
+|   |-- Noise_LargeRoom2_3.wav
+|   |-- Noise_LargeRoom2_4.wav
+|   |-- Noise_LargeRoom2_5.wav
+|   |-- Noise_LargeRoom2_6.wav
+|   |-- Noise_LargeRoom2_7.wav
+|   |-- Noise_LargeRoom2_8.wav
+|   |-- Noise_LargeRoom2_9.wav
+|   |-- Noise_MediumRoom1_1.wav
+|   |-- Noise_MediumRoom1_10.wav
+|   |-- Noise_MediumRoom1_2.wav
+|   |-- Noise_MediumRoom1_3.wav
+|   |-- Noise_MediumRoom1_4.wav
+|   |-- Noise_MediumRoom1_5.wav
+|   |-- Noise_MediumRoom1_6.wav
+|   |-- Noise_MediumRoom1_7.wav
+|   |-- Noise_MediumRoom1_8.wav
+|   |-- Noise_MediumRoom1_9.wav
+|   |-- Noise_MediumRoom2_1.wav
+|   |-- Noise_MediumRoom2_10.wav
+|   |-- Noise_MediumRoom2_2.wav
+|   |-- Noise_MediumRoom2_3.wav
+|   |-- Noise_MediumRoom2_4.wav
+|   |-- Noise_MediumRoom2_5.wav
+|   |-- Noise_MediumRoom2_6.wav
+|   |-- Noise_MediumRoom2_7.wav
+|   |-- Noise_MediumRoom2_8.wav
+|   |-- Noise_MediumRoom2_9.wav
+|   |-- Noise_SmallRoom1_1.wav
+|   |-- Noise_SmallRoom1_10.wav
+|   |-- Noise_SmallRoom1_2.wav
+|   |-- Noise_SmallRoom1_3.wav
+|   |-- Noise_SmallRoom1_4.wav
+|   |-- Noise_SmallRoom1_5.wav
+|   |-- Noise_SmallRoom1_6.wav
+|   |-- Noise_SmallRoom1_7.wav
+|   |-- Noise_SmallRoom1_8.wav
+|   |-- Noise_SmallRoom1_9.wav
+|   |-- Noise_SmallRoom2_1.wav
+|   |-- Noise_SmallRoom2_10.wav
+|   |-- Noise_SmallRoom2_2.wav
+|   |-- Noise_SmallRoom2_3.wav
+|   |-- Noise_SmallRoom2_4.wav
+|   |-- Noise_SmallRoom2_5.wav
+|   |-- Noise_SmallRoom2_6.wav
+|   |-- Noise_SmallRoom2_7.wav
+|   |-- Noise_SmallRoom2_8.wav
+|   `-- Noise_SmallRoom2_9.wav
+|-- README
+|-- RIR
+|   |-- RIR_LargeRoom1_far_AnglA.wav
+|   |-- RIR_LargeRoom1_far_AnglB.wav
+|   |-- RIR_LargeRoom1_near_AnglA.wav
+|   |-- RIR_LargeRoom1_near_AnglB.wav
+|   |-- RIR_LargeRoom2_far_AnglA.wav
+|   |-- RIR_LargeRoom2_far_AnglB.wav
+|   |-- RIR_LargeRoom2_near_AnglA.wav
+|   |-- RIR_LargeRoom2_near_AnglB.wav
+|   |-- RIR_MediumRoom1_far_AnglA.wav
+|   |-- RIR_MediumRoom1_far_AnglB.wav
+|   |-- RIR_MediumRoom1_near_AnglA.wav
+|   |-- RIR_MediumRoom1_near_AnglB.wav
+|   |-- RIR_MediumRoom2_far_AnglA.wav
+|   |-- RIR_MediumRoom2_far_AnglB.wav
+|   |-- RIR_MediumRoom2_near_AnglA.wav
+|   |-- RIR_MediumRoom2_near_AnglB.wav
+|   |-- RIR_SmallRoom1_far_AnglA.wav
+|   |-- RIR_SmallRoom1_far_AnglB.wav
+|   |-- RIR_SmallRoom1_near_AnglA.wav
+|   |-- RIR_SmallRoom1_near_AnglB.wav
+|   |-- RIR_SmallRoom2_far_AnglA.wav
+|   |-- RIR_SmallRoom2_far_AnglB.wav
+|   |-- RIR_SmallRoom2_near_AnglA.wav
+|   `-- RIR_SmallRoom2_near_AnglB.wav
+|-- bin
+|   |-- h_strip
+|   `-- w_decode
+|-- etc
+|   |-- audio_si_dt5a.lst
+|   |-- audio_si_dt5b.lst
+|   |-- audio_si_et_1.lst
+|   |-- audio_si_et_2.lst
+|   `-- audio_si_tr.lst
+|-- read_sphere.m
+`-- sphere_to_wave.csh
+
