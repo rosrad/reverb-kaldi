@@ -1,6 +1,6 @@
 #!/bin/bash
 . check.sh
-echo "### GmmHmm Train ###"
+
 
 function alignment() {
     if [ $# -lt 1 ]; then
@@ -105,6 +105,29 @@ function tri2_lda_mllt() {
     [ "$cond" != "mc" ] && alignment ${mdl}
 }
 
+function nnet2() {
+    cond=
+    ali=tril
+    . utils/parse_options.sh
+
+    mdl=${EXP}/nnet2_${ali}
+    ali=${EXP}/${ali}_ali
+    train=$TR_CLN
+    if [ "$cond" == "mc" ]; then
+        train=$TR_MC
+        mdl=${mdl}_mc
+    fi
+    dnn_extra_opts="--num_epochs 20 --num-epochs-extra 10 --add-layers-period 1 --shrink-interval 3"
+    echo ${mdl}
+    echo $train
+    echo ${ali}
+    steps/nnet2/train_tanh.sh --mix-up 5000 --initial-learning-rate 0.015 \
+        --final-learning-rate 0.002 --num-hidden-layers 2  \
+        --num-jobs-nnet "$nj_train" "${dnn_train_extra_opts[@]}" \
+        ${train} ${DATA}/lang ${ali} ${mdl}
+
+}
+
 
 function train () {
     declare -A MDL=( \
@@ -114,9 +137,15 @@ function train () {
         [tri2_mc]="tri2_phone --cond mc" \
         [tri2_lda_mllt]="tri2_lda_mllt" \
         [tri2_lda_mllt_mc]="tri2_lda_mllt --cond mc" \
+        [nnet2_tri1]="nnet2 --ali tri1" \
+        [nnet2_tri1_mc]="nnet2 --ali tri1 --cond mc" \
+        [nnet2_tri2]="nnet2 --ali tri2" \
+        [nnet2_tri2_mc]="nnet2 --ali tri2 --cond mc" \
         )
     
-    declare -a ORDER=(mono0a tri1 tri2 tri2_mc tri2_lda_mllt tri2_lda_mllt_mc)
+    # declare -a ORDER=(mono0a tri1 tri2 tri2_mc tri2_lda_mllt tri2_lda_mllt_mc)
+
+    declare -a ORDER=( nnet2_tri1 nnet2_tri1_mc nnet2_tri2 nnet2_tri2_mc )
     for mdl in ${ORDER[*]}; do
         if [ ! -e ${EXP}/${mdl}/final.mdl ]; then
             echo "### Train MDL ${mdl} ###"
@@ -127,7 +156,7 @@ function train () {
 }
 
 
-
+echo "### Acoustic Models Train ###"
 train
 # mkgraph ${EXP}/tri1
 # mkgraph ${EXP}/tri2
