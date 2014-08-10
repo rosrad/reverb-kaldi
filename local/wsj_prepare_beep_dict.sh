@@ -28,7 +28,8 @@
 # silence_phones.txt
 
 # run this from ../
-dir=data/local/dict
+. check.sh
+dir=${DATA}/local/dict
 mkdir -p $dir
 
 

@@ -16,16 +16,16 @@
 # See the Apache 2 License for the specific language governing permissions and
 # limitations under the License.
 
+. check.sh
 
-
-dir=`pwd`/data/local/data
-lmdir=`pwd`/data/local/nist_lm
+dir=$(readlink -f ${DATA}/local/data)
+lmdir=$(readlink -f ${DATA}/local/nist_lm)
 mkdir -p $dir $lmdir
 local=`pwd`/local
 utils=`pwd`/utils
-root=`pwd`
+fixedlm=$(readlink -f ${FIXEDLM})
+ORIG_LMDIR=$(readlink -f $2)
 
-. ./path.sh # Needed for KALDI_ROOT
 export PATH=$PATH:$KALDI_ROOT/tools/irstlm/bin
 sph2pipe=$KALDI_ROOT/tools/sph2pipe_v2.5/sph2pipe
 if [ ! -x $sph2pipe ]; then
@@ -36,6 +36,7 @@ fi
 cd $dir
 
 WSJ=$1
+
 if [ ! -d "$WSJ" ]; then
     echo Could not find directory $WSJ! Check pathnames in corpus.sh!
     exit 1
@@ -69,6 +70,7 @@ done
 # for si_tr we need the transcribed utterances (not all)
 si_tr_dot=$WSJ/data/primary_microphone/etc/si_tr.dot
 # copy this, for consistency ...
+
 cp $si_tr_dot $dir
 chmod 644 $dir/si_tr.dot
 
@@ -119,10 +121,11 @@ done
 # REVERB language model is bcb05cnp
 # We also use tri-gram
 echo "Copy language model"
-ORIG_LMDIR=$2
+
 cp $ORIG_LMDIR/bcb05cnp.z $lmdir/lm_bg_5k.arpa.gz || exit 1;
 chmod 644 $lmdir/lm_bg_5k.arpa.gz
-cp $root/tcb05cnp.z $lmdir/lm_tg_5k.arpa.gz || exit 1
+cp ${fixedlm}/tcb05cnp.z $lmdir/lm_tg_5k.arpa.gz || exit 1
 chmod 644 $lmdir/lm_tg_5k.arpa.gz
 
 echo "Data preparation succeeded"
+

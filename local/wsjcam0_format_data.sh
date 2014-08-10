@@ -16,23 +16,22 @@
 # See the Apache 2 License for the specific language governing permissions and
 # limitations under the License.
 
-
-. ./path.sh || exit 1;
+. check.sh
 
 echo "Preparing train and test data"
-srcdir=data/local/data
-lmdir=data/local/nist_lm
-tmpdir=data/local/lm_tmp
-lexicon=data/local/lang_tmp/lexiconp.txt
+srcdir=${DATA}/local/data
+lmdir=${DATA}/local/nist_lm
+tmpdir=${DATA}/local/lm_tmp
+lexicon=${DATA}/local/lang_tmp/lexiconp.txt
 mkdir -p $tmpdir
 
 for x in si_tr si_dt; do
-  mkdir -p data/$x
-  cp $srcdir/${x}_wav.scp data/$x/wav.scp || exit 1;
-  cp $srcdir/$x.txt data/$x/text || exit 1;
-  cp $srcdir/$x.spk2utt data/$x/spk2utt || exit 1;
-  cp $srcdir/$x.utt2spk data/$x/utt2spk || exit 1;
-  #utils/filter_scp.pl data/$x/spk2utt $srcdir/spk2gender > data/$x/spk2gender || exit 1;
+  mkdir -p ${DATA}/$x
+  cp $srcdir/${x}_wav.scp ${DATA}/$x/wav.scp || exit 1;
+  cp $srcdir/$x.txt ${DATA}/$x/text || exit 1;
+  cp $srcdir/$x.spk2utt ${DATA}/$x/spk2utt || exit 1;
+  cp $srcdir/$x.utt2spk ${DATA}/$x/utt2spk || exit 1;
+  #utils/filter_scp.pl ${DATA}/$x/spk2utt $srcdir/spk2gender > ${DATA}/$x/spk2gender || exit 1;
 done
 
 
@@ -43,11 +42,11 @@ echo Preparing language models for test
 
 #for lm_suffix in bg tgpr tg bg_5k tgpr_5k tg_5k; do
 for lm_suffix in bg_5k tg_5k; do
-  test=data/lang_test_${lm_suffix}
+  test=${DATA}/lang_test_${lm_suffix}
   mkdir -p $test
   for f in phones.txt words.txt phones.txt L.fst L_disambig.fst \
      phones/; do
-    cp -r data/lang/$f $test
+    cp -r ${DATA}/lang/$f $test
   done
   gunzip -c $lmdir/lm_${lm_suffix}.arpa.gz | \
    utils/find_arpa_oovs.pl $test/words.txt  > $tmpdir/oovs_${lm_suffix}.txt
