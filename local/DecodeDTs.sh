@@ -2,7 +2,8 @@
 . check.sh
 
 function decode_dt() {
-    reg="*dt*"
+    reg='dt'
+    set='REVERB'
     . utils/parse_options.sh
     if [ $# -lt 1 ] ;then
         echo "ERROR: no enough parametors"
@@ -15,7 +16,7 @@ function decode_dt() {
     echo "### GmmHmm Decode using DT:${reg} ###"
     declare -a AMS=($*)
     for am in ${AMS[*]}; do
-        for dataset in ${DATA}/${reg} ; do
+        for dataset in ${DATA}/${set}_dt/*${reg}* ; do
             echo "#### Decoding  ${dataset} Using AM: $am"
             if [[ $am =~ ^nnet.*  ]]; then
                 graph_am=$(echo $am|cut -d'_' -f2)

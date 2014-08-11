@@ -2,7 +2,8 @@
 . check.sh
 
 function wer_dt() {
-    reg="*dt*"
+    reg='dt'
+    set='REVERB'
     . utils/parse_options.sh
     if [ $# -lt 1 ] ;then
         echo "ERROR: no enough parametors"
@@ -15,7 +16,7 @@ function wer_dt() {
     AMs=(tri1)
     declare -a AMs=($*)
     for am in ${AMs[*]}; do
-        for x in ${EXP}/*${am}*/*decode*${reg}*; do
+        for x in ${EXP}/*${am}*/*decode*${set}*${reg}*; do
             [ -d $x ] && grep WER $x/wer_* | utils/best_wer.sh|awk '{print $2,$14}'|sed -e 's#\./tmp/exp/\(.*\)/decode.*_\([^_]*\)_dt_for_\(.*[0-9]*\).*/wer.*#\1 \2_\3#'
         done 
     done
