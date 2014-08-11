@@ -1,7 +1,6 @@
 #!/bin/bash
 . check.sh
 
-
 function alignment() {
     if [ $# -lt 1 ]; then
         echo "Error: no enough paramaters!"
@@ -128,6 +127,29 @@ function nnet2() {
 
 }
 
+function bottleneck_dnn() {
+    cond=
+    ali=tril
+    stage=-100
+    . utils/parse_options.sh
+    mdl=${BNF_EXP}/${ali}
+    ali=${EXP}/${ali}_ali
+    train=$TR_CLN
+    if [ "$cond" == "mc" ]; then
+        train=$TR_MC
+        mdl=${mdl}_mc
+    fi
+    [[ ! -e $BNF_EXP ]] && mkdir -p ${BNF_EXP}
+    steps/nnet2/train_tanh_bottleneck.sh \
+        --stage $stage --num-jobs-nnet 4 \
+        --num-threads 1 --mix-up 5000 --max-change 40 \
+        --minibatch-size 512 \
+        --initial-learning-rate 0.005 \
+        --final-learning-rate 0.0005 \
+        --num-hidden-layers 5 \
+        --bottleneck-dim 42 --hidden-layer-dim 1024 \
+        ${train} ${DATA}/lang $ali ${mdl} || exit 1
+}
 
 function train () {
     declare -A MDL=( \
@@ -141,11 +163,16 @@ function train () {
         [nnet2_tri1_mc]="nnet2 --ali tri1 --cond mc" \
         [nnet2_tri2]="nnet2 --ali tri2" \
         [nnet2_tri2_mc]="nnet2 --ali tri2 --cond mc" \
+        [bnf_tri1_mc]="bottleneck_dnn --ali tri1 --cond mc" \
+        [bnf_tri2_mc]="bottleneck_dnn --ali tri2 --cond mc" \
         )
     
     # declare -a ORDER=(mono0a tri1 tri2 tri2_mc tri2_lda_mllt tri2_lda_mllt_mc)
 
-    declare -a ORDER=( nnet2_tri1 nnet2_tri1_mc nnet2_tri2 nnet2_tri2_mc )
+    # declare -a ORDER=( nnet2_tri1 nnet2_tri1_mc nnet2_tri2 nnet2_tri2_mc )
+    # declare -a ORDER=( bnf_tri1_mc ) 
+    ORDER=($*)
+    # declare -a ORDER=(  nnet2_tri1_mc )
     for mdl in ${ORDER[*]}; do
         if [ ! -e ${EXP}/${mdl}/final.mdl ]; then
             echo "### Train MDL ${mdl} ###"
@@ -157,7 +184,14 @@ function train () {
 
 
 echo "### Acoustic Models Train ###"
-train
+
+train ${TR_MDL}
+
+# TR_MDL=(mono0a tri1 tri2 tri2_mc tri2_lda_mllt tri2_lda_mllt_mc)
+# TR_MDL=( nnet2_tri1 nnet2_tri1_mc nnet2_tri2 nnet2_tri2_mc )
+# TR_MDL=( bnf_tri1_mc ) 
+# TR_MDL=( nnet2_tri1_mc nnet2_tri2 nnet2_tri2_mc )
+
 # mkgraph ${EXP}/tri1
 # mkgraph ${EXP}/tri2
 # mk_mc tri2

@@ -1,6 +1,7 @@
 #!/bin/bash
 . check.sh
 [ ! -d ${LOG} ] && mkdir -p ${LOG}
+echo ${DT[*]}
 for cmd in $@; do
     # execute cmd and write to log file
     echo "Executing ${cmd}"

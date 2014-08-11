@@ -15,17 +15,15 @@ function decode_dt() {
     echo "### GmmHmm Decode using DT:${reg} ###"
     declare -a AMS=($*)
     for am in ${AMS[*]}; do
-        for dataset in ${DATA}/REVERB_dt/${reg} ; do
+        for dataset in ${DATA}/${reg} ; do
             echo "#### Decoding  ${dataset} Using AM: $am"
             if [[ $am =~ ^nnet.*  ]]; then
                 graph_am=$(echo $am|cut -d'_' -f2)
-                echo Graph $graph_am AM $am
-                # steps/nnet2/decode.sh --nj $nj_bg --num-threads 6 \
-                #     ${EXP}/${graph_am}/graph_bg_5k $dataset ${EXP}/${am}/decode_bg_5k_REVERB_dt_$(basename $dataset)
+                steps/nnet2/decode.sh --nj $nj_bg --num-threads 6 \
+                    ${EXP}/${graph_am}/graph_bg_5k $dataset ${EXP}/${am}/decode_bg_5k_REVERB_dt_$(basename $dataset)
             else
-                echo AM $am
-                # steps/decode.sh --nj $nj_bg \
-                #     ${EXP}/${am}/graph_bg_5k $dataset ${EXP}/${am}/decode_bg_5k_REVERB_dt_$(basename $dataset)
+                steps/decode.sh --nj $nj_bg \
+                    ${EXP}/${am}/graph_bg_5k $dataset ${EXP}/${am}/decode_bg_5k_REVERB_dt_$(basename $dataset)
             fi
         done
     done

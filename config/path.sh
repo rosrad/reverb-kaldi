@@ -25,8 +25,28 @@ export DATA=${WORKSPACE}/data
 export EXP=${WORKSPACE}/exp
 export LOG=${WORKSPACE}/log
 
-export TR_CLN=${DATA}/si_tr
-export TR_MC=${DATA}/REVERB_tr_cut/SimData_tr_for_1ch_A
+#feature
+export FEATS=${WORKSPACE}/feats
+
+#for bottelneck feature
+export BNF=${FEATS}/bnf
+export BNF_EXP=${BNF}/exp
+export BNF_DATA=${BNF}/data
+export BNF_DUMP=${BNF_EXP}/dump
+export BNF_PARAM=${BNF}/param
+
+# for development set
+
+FEAT_DATA=${DATA}
+case $FEAT_TYPE in
+    bnf) FEAT_DATA=${BNF_DATA};;
+    mfcc) ;;
+    *);;
+esac
+
+export DT_DATA=${FEAT_DATA}
+export TR_CLN=${FEAT_DATA}/si_tr
+export TR_MC=${FEAT_DATA}/REVERB_tr_cut/SimData_tr_for_1ch_A
 
 # DO NOT CHANGE THIS
 export LD_LIBRARY_PATH=$KALDI_ROOT/tools/openfst-1.3.2/lib:$LD_LIBRARY_PATH
