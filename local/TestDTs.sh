@@ -17,6 +17,7 @@ function test_dt() {
 }
 
 # test_dt --reg *dt* tri1 tri2 tri2_mc
-test_dt --reg dt --set REVERB ${DT_MDL}
+export REG="cln*dt"
+test_dt ${DT_MDL}
 
 
