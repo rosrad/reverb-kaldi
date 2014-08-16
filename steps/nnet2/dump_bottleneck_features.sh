@@ -16,7 +16,7 @@ transform_dir=
 
 echo "$0 $@"  # Print the command line for logging
 
-[ -f path.sh ] && . ./path.sh # source the path.
+. check.sh
 . parse_options.sh || exit 1;
 
 if [ $# != 5 ]; then
@@ -37,7 +37,7 @@ dir=$5
 
 # because we [cat trans.*], no need to keep nj consistent with [# of trans]
 
-nj=10
+nj=$nj_train
 
 # Assume that final.mat and final.nnet are at nnetdir
 nnet_lda=$nnetdir/lda.mat

@@ -37,12 +37,15 @@ export BNF_PARAM=${BNF}/param
 
 # for development set
 
+
 FEAT_DATA=${DATA}
 case $FEAT_TYPE in
     bnf) FEAT_DATA=${BNF_DATA};;
     mfcc) ;;
-    *);;
+    *) ;;
 esac
+export FEAT_LOG=${WORKSPACE}/log/${FEAT_TYPE}
+export FEAT_EXP=${WORKSPACE}/exp/${FEAT_TYPE}
 
 export DT_DATA=${FEAT_DATA}
 export TR_CLN=${FEAT_DATA}/si_tr

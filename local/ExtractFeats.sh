@@ -9,11 +9,15 @@ function dump_bnf() {
     [ ! -d $BNF_PARAM ] && mkdir -p $BNF_PARAM
     [ ! -d $BNF_DATA ] && mkdir -p $BNF_DATA
     for tag in $* ;do
-        for dataset in $(find  ${DATA}/$tag/* -maxdepth 0 -type d ); do 
+        cmd="find  ${DATA}/${tag}/* -maxdepth 0 -type d"
+        if [[ $tag =~ ^si_.* ]]; then
+            cmd="find  ${DATA}/${tag}/ -maxdepth 0 -type d"  
+        fi
+
+        for dataset in $($cmd); do 
             set=$(basename $dataset)
-            echo $dataset ${BNF_DATA}/$tag/${set}
-            # steps/nnet2/dump_bottleneck_features.sh --nj $nj_decode \
-            #     ${dataset} ${BNF_DATA}/$tag/${set} ${BNF_EXP}/${mdl} ${BNF_PARAM} ${BNF_DUMP}
+            steps/nnet2/dump_bottleneck_features.sh --nj $nj_decode \
+                ${dataset} ${BNF_DATA}/$tag/${set} ${BNF_EXP}/${mdl} ${BNF_PARAM} ${BNF_DUMP}
         done
     done
 }
@@ -42,5 +46,5 @@ function extract_feats() {
     esac
 }
 # declare -a DT=( REVERB_tr_cut REVERB_dt PHONE_dt PHONE_SEL_dt )
-extract_feats --feat $FEAT_TYPE $DT
+extract_feats --feat $FEAT_TYPE --mdl tri1_mc $DT
 
