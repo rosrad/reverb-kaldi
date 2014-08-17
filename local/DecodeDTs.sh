@@ -24,10 +24,10 @@ function decode_dt() {
             if [[ $am =~ ^nnet.*  ]]; then
                 graph_am=$(echo $am|cut -d'_' -f2)
                 steps/nnet2/decode.sh --nj $nj_bg --num-threads 6 \
-                    ${EXP}/${graph_am}/graph_bg_5k $dt ${EXP}/${am}/decode_bg_5k_REVERB_dt_$(basename ${dt})
+                    ${FEAT_EXP}/${graph_am}/graph_bg_5k $dt ${FEAT_EXP}/${am}/decode_bg_5k_REVERB_dt_$(basename ${dt})
             else
                 steps/decode.sh --nj $nj_bg \
-                    ${EXP}/${am}/graph_bg_5k $dt ${EXP}/${am}/decode_bg_5k_REVERB_dt_$(basename ${dt})
+                    ${FEAT_EXP}/${am}/graph_bg_5k $dt ${FEAT_EXP}/${am}/decode_bg_5k_REVERB_dt_$(basename ${dt})
             fi
         done
         echo 

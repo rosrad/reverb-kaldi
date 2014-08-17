@@ -16,7 +16,7 @@ function wer_dt() {
     AMs=(tri1)
     declare -a AMs=($*)
     for am in ${AMs[*]}; do
-        for x in $(find ${EXP}/${am}/ -maxdepth 1 -type d | grep -P 'decode.*'${reg}'.*'|sort); do
+        for x in $(find ${FEAT_EXP}/${am}/ -maxdepth 1 -type d | grep -P 'decode.*'${reg}'.*'|sort); do
             if [[ -n $test ]]; then
                 echo "${x}#${am}"
                 continue

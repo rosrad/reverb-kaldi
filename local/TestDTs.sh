@@ -4,6 +4,7 @@
 
 function test_dt() {
     CMDs=(local/DecodeDTs.sh  local/WerDTs.sh)
+    [[ -n $TESTONLY ]] && CMDs=(local/WerDTs.sh)
     [ ! -d ${LOG} ] && mkdir -p ${LOG}
     for cmd in ${CMDs[*]}; do
         # execute cmd and write to log file
@@ -16,7 +17,7 @@ function test_dt() {
 }
 
 # test_dt --reg *dt* tri1 tri2 tri2_mc
-export REG=".*Phone_.*"
+# export REG=".*Phone_.*"
 test_dt ${DT_MDL}
 
 

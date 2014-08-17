@@ -21,36 +21,30 @@
 # for train Acoustic models and extract features
 # feature type and development set planed to extract
 
-# train models
+# train models for bnf 
 # export TR_MDL="bnf_tri1_mc"
 # utils/call.sh \
 #     local/TrainAMs.sh
 # export FEAT_TYPE=bnf
 # export DT="REVERB_tr_cut REVERB_dt"
+export FEAT_TYPE=bnf
+# export DT="si_tr REVERB_tr_cut REVERB_dt"
+export DT="si_tr"
+utils/call.sh \
+    local/ExtractFeats.sh
+
+# train models using  bnf features
+# export FEAT_TYPE=bnf
+# export TR_MDL="mono0a"
+# utils/call.sh \
+#     local/TrainAMs.sh
+
+# export DT="REVERB_tr_cut REVERB_dt"
 # utils/call.sh \
 #     local/ExtractFeats.sh
 
 
-
 # for Decode and get results of the Development Set
-# nnet2_tri1 nnet2_tri1_mc nnet2_tri2 nnet2_tri2_mc tri1 tri2 tri2_mc"
-# nnet2_tri1_mc nnet2_tri2 nnet2_tri2_mc tri1 tri2 tri2_mc"
-# export DT_MDL="tri1 tri1_mc"
-export DT_MDL="tri1 tri2 tri1_mc tri2_mc"
-export REG=".*Sim.*"
-export TESTONLY=true
-for feat in bnf mfcc ;do
-    export FEAT_TYPE=$feat
-    utils/call.sh \
-        local/TestDTs.sh
-done
-
-
-
-
-
-
-
-
-
-
+# DT_MDL="tri1"
+# utils/call.sh \
+# local/TestDTs.sh

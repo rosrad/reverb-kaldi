@@ -11,13 +11,13 @@ function dump_bnf() {
     for tag in $* ;do
         cmd="find  ${DATA}/${tag}/* -maxdepth 0 -type d"
         if [[ $tag =~ ^si_.* ]]; then
-            cmd="find  ${DATA}/${tag}/ -maxdepth 0 -type d"  
+            cmd="find  ${DATA}/${tag}/ -maxdepth 0 -type d"
         fi
 
         for dataset in $($cmd); do 
-            set=$(basename $dataset)
+            relative=${dataset/${DATA}/}
             steps/nnet2/dump_bottleneck_features.sh --nj $nj_decode \
-                ${dataset} ${BNF_DATA}/$tag/${set} ${BNF_EXP}/${mdl} ${BNF_PARAM} ${BNF_DUMP}
+                ${dataset} ${BNF_DATA}/${relative} ${BNF_EXP}/${mdl} ${BNF_PARAM} ${BNF_DUMP}
         done
     done
 }
