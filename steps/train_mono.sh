@@ -20,6 +20,8 @@ config= # name of config file.
 stage=-4
 power=0.25 # exponent to determine number of gaussians from occurrence counts
 feat_dim=-1 # This option is now ignored but retained for compatibility.
+norm_vars=false # deprecated, prefer --cmvn-opts "--norm-vars=false"
+cmvn_opts=  # can be used to add extra options to cmvn.
 # End configuration section.
 
 echo "$0 $@"  # Print the command line for logging
@@ -51,7 +53,10 @@ sdata=$data/split$nj;
 [[ -d $sdata && $data/feats.scp -ot $sdata ]] || split_data.sh $data $nj || exit 1;
 
 
-feats="ark,s,cs:apply-cmvn --norm-vars=false --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | add-deltas ark:- ark:- |"
+$norm_vars && cmvn_opts="--norm-vars=true $cmvn_opts"
+echo $cmvn_opts  > $dir/cmvn_opts # keep track of options to CMVN.
+
+feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | add-deltas ark:- ark:- |"
 example_feats="`echo $feats | sed s/JOB/1/g`";
 
 echo "$0: Initializing monophone system."
@@ -97,8 +102,7 @@ if [ $stage -le 0 ]; then
 fi
 
 
-beam=9 # will change to 10 below after 1st pass
-#beam=6 # will change to 10 below after 1st pass
+beam=6 # will change to 10 below after 1st pass
 # note: using slightly wider beams for WSJ vs. RM.
 x=1
 while [ $x -lt $num_iters ]; do
@@ -124,8 +128,7 @@ while [ $x -lt $num_iters ]; do
   if [ $x -le $max_iter_inc ]; then
      numgauss=$[$numgauss+$incgauss];
   fi
-  #beam=10
-  beam=15
+  beam=10
   x=$[$x+1]
 done
 

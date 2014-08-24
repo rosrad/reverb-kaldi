@@ -42,12 +42,11 @@ sdata=$data/split$nj;
 [[ -d $sdata && $data/feats.scp -ot $sdata ]] || split_data.sh $data $nj || exit 1;
 
 splice_opts=`cat $dir/splice_opts 2>/dev/null` # frame-splicing options.
+cmvn_opts=`cat $srcdir/cmvn_opts 2>/dev/null`
 
 silphonelist=`cat $lang/phones/silence.csl` || exit 1;
 
-# alimdl = mdl, alimdl is never referenced below (felix)
-#for f in $data/feats.scp $dir/final.alimdl $dir/final.mdl $dir/ali.1.gz; do
-for f in $data/feats.scp $dir/final.mdl $dir/ali.1.gz; do
+for f in $data/feats.scp $dir/final.alimdl $dir/final.mdl $dir/ali.1.gz; do
   [ ! -f $f ] && echo "$0: no such file $f" && exit 1;
 done
 
@@ -56,8 +55,8 @@ done
 if [ -f $dir/final.mat ]; then feat_type=lda; else feat_type=delta; fi
 echo "$0: feature type is $feat_type";
 case $feat_type in
-  delta) sifeats="ark,s,cs:apply-cmvn --norm-vars=false --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | add-deltas ark:- ark:- |";;
-  lda) sifeats="ark,s,cs:apply-cmvn --norm-vars=false --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | splice-feats $splice_opts ark:- ark:- | transform-feats $dir/final.mat ark:- ark:- |";;
+  delta) sifeats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | add-deltas ark:- ark:- |";;
+  lda) sifeats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | splice-feats $splice_opts ark:- ark:- | transform-feats $dir/final.mat ark:- ark:- |";;
   *) echo "Invalid feature type $feat_type" && exit 1;
 esac
 

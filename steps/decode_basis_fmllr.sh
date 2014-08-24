@@ -44,7 +44,6 @@ max_active=7000
 beam=13.0
 lattice_beam=6.0
 nj=4
-num_threads=4
 silence_weight=0.01
 cmd=run.pl
 si_dir=
@@ -85,7 +84,7 @@ mkdir -p $dir/log
 [[ -d $sdata && $data/feats.scp -ot $sdata ]] || split_data.sh $data $nj || exit 1;
 echo $nj > $dir/num_jobs
 splice_opts=`cat $srcdir/splice_opts 2>/dev/null` # frame-splicing options.
-thread_string="-parallel --num-threads=$num_threads"
+cmvn_opts=`cat $srcdir/cmvn_opts 2>/dev/null`
 
 silphonelist=`cat $graphdir/phones/silence.csl` || exit 1;
 
@@ -107,7 +106,7 @@ fi
 if [ -z "$si_dir" ]; then # we need to do the speaker-independent decoding pass.
   si_dir=${dir}.si # Name it as our decoding dir, but with suffix ".si".
   if [ $stage -le 0 ]; then
-    steps/decode.sh --num-threads $num_threads --acwt $acwt --nj $nj --cmd "$cmd" --beam $first_beam --model $alignment_model --max-active $first_max_active $graphdir $data $si_dir || exit 1;
+    steps/decode.sh --acwt $acwt --nj $nj --cmd "$cmd" --beam $first_beam --model $alignment_model --max-active $first_max_active $graphdir $data $si_dir || exit 1;
   fi
 fi
 ##
@@ -126,8 +125,8 @@ done
 if [ -f $srcdir/final.mat ]; then feat_type=lda; else feat_type=delta; fi
 echo "$0: feature type is $feat_type";
 case $feat_type in
-  delta) sifeats="ark,s,cs:apply-cmvn --norm-vars=false --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | add-deltas ark:- ark:- |";;
-  lda) sifeats="ark,s,cs:apply-cmvn --norm-vars=false --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | splice-feats $splice_opts ark:- ark:- | transform-feats $srcdir/final.mat ark:- ark:- |";;
+  delta) sifeats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | add-deltas ark:- ark:- |";;
+  lda) sifeats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | splice-feats $splice_opts ark:- ark:- | transform-feats $srcdir/final.mat ark:- ark:- |";;
   *) echo "Invalid feature type $feat_type" && exit 1;
 esac
 ##
@@ -157,7 +156,7 @@ pass1feats="$sifeats transform-feats --utt2spk=ark:$sdata/JOB/utt2spk ark:$dir/p
 if [ $stage -le 2 ]; then
   echo "$0: doing main lattice generation phase"
   $cmd JOB=1:$nj $dir/log/decode.JOB.log \
-    gmm-latgen-faster$thread_string  --max-active=$max_active --beam=$beam --lattice-beam=$lattice_beam \
+    gmm-latgen-faster --max-active=$max_active --beam=$beam --lattice-beam=$lattice_beam \
     --acoustic-scale=$acwt  \
     --determinize-lattice=false --allow-partial=true --word-symbol-table=$graphdir/words.txt \
     $adapt_model $graphdir/HCLG.fst "$pass1feats" "ark:|gzip -c > $dir/lat.tmp.JOB.gz" \

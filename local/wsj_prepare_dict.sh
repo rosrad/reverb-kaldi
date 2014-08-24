@@ -27,13 +27,12 @@
 # silence_phones.txt
 
 # run this from ../
-. check.sh
-dir=${DATA}/local/dict
+dir=data/local/dict
 mkdir -p $dir
 
 
 # (1) Get the CMU dictionary
-svn co  http://svn.code.sf.net/p/cmusphinx/code/trunk/cmudict \
+svn co  https://svn.code.sf.net/p/cmusphinx/code/trunk/cmudict \
   $dir/cmudict || exit 1;
 
 # can add -r 10966 for strict compatibility.

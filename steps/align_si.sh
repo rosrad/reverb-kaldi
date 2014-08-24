@@ -27,14 +27,14 @@ echo "$0 $@"  # Print the command line for logging
 . parse_options.sh || exit 1;
 
 if [ $# != 4 ]; then
-   echo "usage: steps/align_si.sh <data-dir> <lang-dir> <src-dir> <align-dir>"
-   echo "e.g.:  steps/align_si.sh data/train data/lang exp/tri1 exp/tri1_ali"
-   echo "main options (for others, see top of script file)"
-   echo "  --config <config-file>                           # config containing options"
-   echo "  --nj <nj>                                        # number of parallel jobs"
-   echo "  --use-graphs true                                # use graphs in src-dir"
-   echo "  --cmd (utils/run.pl|utils/queue.pl <queue opts>) # how to run jobs."
-   exit 1;
+    echo "usage: steps/align_si.sh <data-dir> <lang-dir> <src-dir> <align-dir>"
+    echo "e.g.:  steps/align_si.sh data/train data/lang exp/tri1 exp/tri1_ali"
+    echo "main options (for others, see top of script file)"
+    echo "  --config <config-file>                           # config containing options"
+    echo "  --nj <nj>                                        # number of parallel jobs"
+    echo "  --use-graphs true                                # use graphs in src-dir"
+    echo "  --cmd (utils/run.pl|utils/queue.pl <queue opts>) # how to run jobs."
+    exit 1;
 fi
 
 data=$1
@@ -61,11 +61,11 @@ if [ -f $srcdir/final.mat ]; then feat_type=lda; else feat_type=delta; fi
 echo "$0: feature type is $feat_type"
 
 case $feat_type in
-  delta) feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | add-deltas ark:- ark:- |";;
-  lda) feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | splice-feats $splice_opts ark:- ark:- | transform-feats $srcdir/final.mat ark:- ark:- |"
-    cp $srcdir/final.mat $srcdir/full.mat $dir    
-   ;;
-  *) echo "$0: invalid feature type $feat_type" && exit 1;
+    delta) feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | add-deltas ark:- ark:- |";;
+    lda) feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | splice-feats $splice_opts ark:- ark:- | transform-feats $srcdir/final.mat ark:- ark:- |"
+        cp $srcdir/final.mat $srcdir/full.mat $dir    
+        ;;
+    *) echo "$0: invalid feature type $feat_type" && exit 1;
 esac
 
 echo "$0: aligning data in $data using model from $srcdir, putting alignments in $dir"
@@ -73,20 +73,20 @@ echo "$0: aligning data in $data using model from $srcdir, putting alignments in
 mdl="gmm-boost-silence --boost=$boost_silence `cat $lang/phones/optional_silence.csl` $dir/final.mdl - |"
 
 if $use_graphs; then 
-  [ $nj != "`cat $srcdir/num_jobs`" ] && echo "$0: mismatch in num-jobs" && exit 1;
-  [ ! -f $srcdir/fsts.1.gz ] && echo "$0: no such file $srcdir/fsts.1.gz" && exit 1;
+    [ $nj != "`cat $srcdir/num_jobs`" ] && echo "$0: mismatch in num-jobs" && exit 1;
+    [ ! -f $srcdir/fsts.1.gz ] && echo "$0: no such file $srcdir/fsts.1.gz" && exit 1;
 
-  $cmd JOB=1:$nj $dir/log/align.JOB.log \
-    gmm-align-compiled $scale_opts --beam=$beam --retry-beam=$retry_beam "$mdl" \
-      "ark:gunzip -c $srcdir/fsts.JOB.gz|" "$feats" "ark:|gzip -c >$dir/ali.JOB.gz" || exit 1;
+    $cmd JOB=1:$nj $dir/log/align.JOB.log \
+        gmm-align-compiled $scale_opts --beam=$beam --retry-beam=$retry_beam "$mdl" \
+        "ark:gunzip -c $srcdir/fsts.JOB.gz|" "$feats" "ark:|gzip -c >$dir/ali.JOB.gz" || exit 1;
 else
-  tra="ark:utils/sym2int.pl --map-oov $oov -f 2- $lang/words.txt $sdata/JOB/text|";
-  # We could just use gmm-align in the next line, but it's less efficient as it compiles the
-  # training graphs one by one.
-  $cmd JOB=1:$nj $dir/log/align.JOB.log \
-    compile-train-graphs $dir/tree $dir/final.mdl  $lang/L.fst "$tra" ark:- \| \
-    gmm-align-compiled $scale_opts --beam=$beam --retry-beam=$retry_beam "$mdl" ark:- \
-      "$feats" "ark,t:|gzip -c >$dir/ali.JOB.gz" || exit 1;
+    tra="ark:utils/sym2int.pl --map-oov $oov -f 2- $lang/words.txt $sdata/JOB/text|";
+    # We could just use gmm-align in the next line, but it's less efficient as it compiles the
+    # training graphs one by one.
+    $cmd JOB=1:$nj $dir/log/align.JOB.log \
+        compile-train-graphs $dir/tree $dir/final.mdl  $lang/L.fst "$tra" ark:- \| \
+        gmm-align-compiled $scale_opts --beam=$beam --retry-beam=$retry_beam "$mdl" ark:- \
+        "$feats" "ark,t:|gzip -c >$dir/ali.JOB.gz" || exit 1;
 fi
 
 echo "$0: done aligning data."

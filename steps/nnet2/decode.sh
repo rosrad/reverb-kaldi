@@ -15,7 +15,7 @@ acwt=0.1  # Just a default value, used for adaptation and beam-pruning..
 cmd=run.pl
 beam=15.0
 max_active=7000
-lat_beam=8.0 # Beam we use in lattice generation.
+lattice_beam=8.0 # Beam we use in lattice generation.
 iter=final
 num_threads=1 # if >1, will use gmm-latgen-faster-parallel
 parallel_opts=  # If you supply num-threads, you should supply this too.
@@ -23,6 +23,7 @@ scoring_opts=
 skip_scoring=false
 feat_type=
 spk_vecs_dir=
+minimize=false
 # End configuration section.
 
 echo "$0 $@"  # Print the command line for logging
@@ -71,12 +72,13 @@ echo $nj > $dir/num_jobs
 ## Set up features.
 if [ -z "$feat_type" ]; then
   if [ -f $srcdir/final.mat ]; then feat_type=lda; else feat_type=raw; fi
-  echo "$0: feature type is $feat_type"
 fi
+  echo "$0: feature type is $feat_type"
+cmvn_opts=`cat $srcdir/cmvn_opts 2>/dev/null`
 
 case $feat_type in
-  raw) feats="ark,s,cs:apply-cmvn --norm-vars=false --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- |";;
-  lda) feats="ark,s,cs:apply-cmvn --norm-vars=false --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | splice-feats $splice_opts ark:- ark:- | transform-feats $srcdir/final.mat ark:- ark:- |"
+  raw) feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- |";;
+  lda) feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | splice-feats $splice_opts ark:- ark:- | transform-feats $srcdir/final.mat ark:- ark:- |"
     ;;
   *) echo "$0: invalid feature type $feat_type" && exit 1;
 esac
@@ -108,8 +110,9 @@ fi
 
 if [ $stage -le 1 ]; then
   $cmd $parallel_opts JOB=1:$nj $dir/log/decode.JOB.log \
-    nnet-latgen-faster$thread_string "${spk_vecs_opt[@]}" --max-active=$max_active --beam=$beam \
-     --lattice-beam=$lat_beam --acoustic-scale=$acwt --allow-partial=true \
+    nnet-latgen-faster$thread_string "${spk_vecs_opt[@]}" \
+     --minimize=$minimize --max-active=$max_active --beam=$beam \
+     --lattice-beam=$lattice_beam --acoustic-scale=$acwt --allow-partial=true \
      --word-symbol-table=$graphdir/words.txt "$model" \
      $graphdir/HCLG.fst "$feats" "ark:|gzip -c > $dir/lat.JOB.gz" || exit 1;
 fi
