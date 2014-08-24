@@ -27,11 +27,11 @@
 #     local/TrainAMs.sh
 # export FEAT_TYPE=bnf
 # export DT="REVERB_tr_cut REVERB_dt"
-export FEAT_TYPE=bnf
-# export DT="si_tr REVERB_tr_cut REVERB_dt"
-export DT="si_tr"
-utils/call.sh \
-    local/ExtractFeats.sh
+# export FEAT_TYPE=bnf
+# # export DT="si_tr REVERB_tr_cut REVERB_dt"
+# export DT="si_tr"
+# utils/call.sh \
+#     local/ExtractFeats.sh
 
 # train models using  bnf features
 # export FEAT_TYPE=bnf
@@ -43,8 +43,44 @@ utils/call.sh \
 # utils/call.sh \
 #     local/ExtractFeats.sh
 
-
 # for Decode and get results of the Development Set
 # DT_MDL="tri1"
 # utils/call.sh \
 # local/TestDTs.sh
+
+
+
+# train bnf DNN
+# export FEAT_TYPE=bnf
+# export TR_MDL="nnet2_tri2 nnet2_tri2_mc"
+# utils/call.sh \
+#     local/TrainAMs.sh
+
+# # decode all development sets
+# export DT_MDL=${TR_MDL}
+# export REG=".*dt.*"
+# # export TESTONLY=true
+# utils/call.sh \
+#     local/TestDTs.sh  #--fmllr true
+
+export TR_MDL="lda_mllt_tri2 lda_mllt_tri2_mc"
+export DT_MDL=${TR_MDL}
+export REG=".*dt.*"
+# export TESTONLY=true
+
+for feat in  bnf ; do
+    export FEAT_TYPE=$feat
+    utils/call.sh \
+        local/TrainAMs.sh
+# decode all development sets
+for fmllr in "" "true"; do
+    if [[ -z $fmllr ]];then
+        utils/call.sh \
+            local/TestDTs.sh
+    else
+        utils/call.sh \
+            local/TestDTs.sh --fmllr true
+    fi
+done
+
+done

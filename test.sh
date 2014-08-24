@@ -35,18 +35,47 @@
 # for Decode and get results of the Development Set
 # nnet2_tri1 nnet2_tri1_mc nnet2_tri2 nnet2_tri2_mc tri1 tri2 tri2_mc"
 # nnet2_tri1_mc nnet2_tri2 nnet2_tri2_mc tri1 tri2 tri2_mc"
-# export DT_MDL="tri1 tri1_mc"
-export DT_MDL="tri1 tri2 tri1_mc tri2_mc"
-export REG=".*Sim.*"
-export TESTONLY=true
-for feat in bnf mfcc ;do
+# function feat_data() {
+#     fmllr
+# }
+
+# export FEAT_DATA=${MFCC_FMLLR}/tri1_mc_/data
+# export FEAT_TYPE=mfcc
+# export DT_MDL="nnet2_tri2 nnet2_tri2_mc"
+# # export DT_MDL="tri2 tri2_mc nnet2_tri2 nnet2_tri2_mc"
+# # export DT_MDL="tri1 tri2 tri1_mc tri2_mc"
+# # export DT_MDL="tri1_mc"
+# export REG=".*Sim.*dt.*"
+# # export TESTONLY=true
+# utils/call.sh \
+#     local/TestDTs.sh    --fmllr tri2_mc
+
+export TR_MDL="nnet2_lda_mllt_tri2"
+export DT_MDL=${TR_MDL}
+#     utils/call.sh \
+#         local/TrainAMs.sh
+# decode all development sets
+
+
+
+for feat in  mfcc ; do
     export FEAT_TYPE=$feat
-    utils/call.sh \
-        local/TestDTs.sh
+    export REG=".*dt.*"
+    # export TESTONLY=true
+    for fmllr in "" "true"; do
+        if [[ -z $fmllr ]];then
+            utils/call.sh \
+                local/TestDTs.sh
+        else
+            utils/call.sh \
+                local/TestDTs.sh --fmllr lda_mllt_tri2_mc
+        fi
+    done
 done
-
-
-
+# export FEAT_TYPE=mfcc
+# # export TESTONLY=true
+# utils/call.sh \
+#     local/TestDTs.sh --fmllr lda_mllt_tri2_mc
 
 
 

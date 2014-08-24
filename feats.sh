@@ -27,11 +27,13 @@
 #     local/TrainAMs.sh
 # export FEAT_TYPE=bnf
 # export DT="REVERB_tr_cut REVERB_dt"
-export FEAT_TYPE=bnf
 # export DT="si_tr REVERB_tr_cut REVERB_dt"
-export DT="si_tr"
+# DT=(  REVERB_tr_cut REVERB_dt PHONE_dt PHONE_SEL_dt )
+#  PHONE_dt
+# export DT="PHONE_dt PHONE_SEL_dt"
+export DT="REVERB_dt"
 utils/call.sh \
-    local/ExtractFeats.sh
+    local/ExtractFeats.sh mfcc_fmllr 
 
 # train models using  bnf features
 # export FEAT_TYPE=bnf
@@ -48,3 +50,5 @@ utils/call.sh \
 # DT_MDL="tri1"
 # utils/call.sh \
 # local/TestDTs.sh
+
+

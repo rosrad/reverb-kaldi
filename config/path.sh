@@ -27,32 +27,46 @@ export LOG=${WORKSPACE}/log
 
 #feature
 export FEATS=${WORKSPACE}/feats
-
 #for bottelneck feature
+# TODO should not use the var below
 export BNF=${FEATS}/bnf
 export BNF_EXP=${BNF}/exp
+export BNF_EXTRACT_EXP=${BNF}/exp
 export BNF_DATA=${BNF}/data
 export BNF_DUMP=${BNF_EXP}/dump
 export BNF_PARAM=${BNF}/param
 
+
+feature_set=(mfcc bnf)
+
+for feat in ${feature_set[*]}; do
+    FEAT=${feat^^}              # upper the feature name
+    export ${FEAT}_EXP="${WORKSPACE}/exp/${feat}"
+    export ${FEAT}_DATA="${FEATS}/${feat}/data"
+    export ${FEAT}_FEAT="${FEATS}/${feat}"
+    # the var is used for the feature type than need to train some model to extract 
+    # for example bottleneck feature
+    export ${FEAT}_MDL_EXP="${FEATS}/${feat}/exp"
+    export ${FEAT}_MDL_PARAM="${FEATS}/${feat}/param"
+    export ${FEAT}_MDL_DUMP="${FEATS}/${feat}/exp/dump"
+done
 # for development set
 
-
-FEAT_DATA=${DATA}
-case $FEAT_TYPE in
-    bnf) FEAT_DATA=${BNF_DATA};;
-    mfcc) ;;
-    *) ;;
-esac
-export FEAT_LOG=${WORKSPACE}/log/${FEAT_TYPE}
-export FEAT_EXP=${WORKSPACE}/exp/${FEAT_TYPE}
+# used for create the feature relatived variables
+feat_data_var=${FEAT_TYPE^^}_DATA
+FEAT_DATA=${!feat_data_var}
 
 export DT_DATA=${FEAT_DATA}
 export TR_CLN=${FEAT_DATA}/si_tr
 export TR_MC=${FEAT_DATA}/REVERB_tr_cut/SimData_tr_for_1ch_A
+# used for create feature relative exp variables
+feat_exp_var=${FEAT_TYPE^^}_EXP
+FEAT_EXP=${!feat_exp_var}
+export FEAT_LOG=${WORKSPACE}/log/${FEAT_TYPE}
 
 # DO NOT CHANGE THIS
 export LD_LIBRARY_PATH=$KALDI_ROOT/tools/openfst-1.3.2/lib:$LD_LIBRARY_PATH
 export PATH=$PWD/utils/:$KALDI_ROOT/src/bin:$KALDI_ROOT/tools/openfst/bin:$KALDI_ROOT/src/fstbin/:$KALDI_ROOT/src/gmmbin/:$KALDI_ROOT/src/featbin/:$KALDI_ROOT/src/lm/:$KALDI_ROOT/src/sgmmbin/:$KALDI_ROOT/src/sgmm2bin/:$KALDI_ROOT/src/fgmmbin/:$KALDI_ROOT/src/latbin/:$KALDI_ROOT/src/nnetbin:$KALDI_ROOT/src/nnet-cpubin/:$KALDI_ROOT/src/kwsbin:$PWD:$PATH
 export LC_ALL=C
+
 

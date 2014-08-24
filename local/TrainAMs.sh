@@ -1,18 +1,48 @@
 #!/bin/bash
-. check.sh
+
+function mdl_name() {
+    fmllr=
+    ali=
+    mc=
+    lda=
+    . utils/parse_options.sh
+
+    mdl=${1}
+    opt=""
+    if [[ -n ${ali} ]];then
+        mdl=${mdl}_${ali}
+    fi
+    PARAMATERS=( mc fmllr lda )
+    for para in ${PARAMATERS[*]} ;do
+        if [[ -n ${!para} ]];then
+            opt=${opt}_${para}
+        fi
+    done
+    echo ${mdl}${opt}
+}
 
 function alignment() {
+    fmllr=
+    . utils/parse_options.sh
+    
     if [ $# -lt 1 ]; then
         echo "Error: no enough paramaters!"
         echo "Usage: alignment tri2"
         exit 1;
     fi
-    mdl=$1
-    if [ ! -e ${mdl}_ali/ali.1.gz ]; then
+    mdl=${FEAT_EXP}/$1
+    dst_ali=${mdl}_ali
+    ali_script="align_si.sh"
+    if [[ -n $fmllr ]]; then
+        dst_ali=${mdl}_fmllr_ali
+        ali_script="align_fmllr.sh"
+    fi        
+    if [ ! -e ${dst_ali}/ali.1.gz ]; then
         echo "Align Model #${mdl}#."
-        steps/align_si.sh --nj $nj_train ${@:2} \
-            $TR_CLN ${DATA}/lang ${mdl} ${mdl}_ali || exit 1;
+        steps/${ali_script} --nj $nj_train ${@:2} \
+            $TR_CLN ${DATA}/lang ${mdl} ${dst_ali} || exit 1;
     fi
+    echo ${dst_ali}
 }
 
 function mkgraph() {
@@ -24,16 +54,6 @@ function mkgraph() {
     mdl=$1
     echo "### Make Graph of MDL ${mdl} "
     utils/mkgraph.sh ${@:2} ${DATA}/lang_test_bg_5k ${mdl} ${mdl}/graph_bg_5k
-}
-
-function fmllr(){
-    if [ $# -lt 1 ]; then
-        echo "Error: no enough paramaters!"
-        echo "Usage: fmllr tri2a_mc"
-        exit 1;
-    fi
-    mdl=$1
-    steps/get_fmllr_basis.sh --per-utt true $TR_MC ${DATA}/lang ${mdl} || exit 1;
 }
 
 # Train monophone model on clean data (si_tr).
@@ -60,7 +80,6 @@ function tri1_phone() {
     steps/train_deltas.sh --boost-silence 1.25 \
         2000 10000 $train ${DATA}/lang ${ali} ${mdl} || exit 1;
     mkgraph ${mdl}
-    [ "$cond" != "mc" ] && alignment ${mdl}
 }
 
 # The following code trains and evaluates a delta feature recognizer, which is similar to the HTK
@@ -72,7 +91,7 @@ function tri2_phone() {
     . utils/parse_options.sh
     mdl=${FEAT_EXP}/tri2
     train=$TR_CLN
-    ali=${FEAT_EXP}/tri1_ali
+    ali=$(alignment tri1)
     if [ "$cond" == "mc" ]; then
         train=$TR_MC
         ali=${mdl}_ali
@@ -81,55 +100,55 @@ function tri2_phone() {
     steps/train_deltas.sh \
         2500 15000 $train ${DATA}/lang $ali ${mdl} || exit 1;
     mkgraph ${mdl}
-    [ "$cond" != "mc" ] && alignment ${mdl}
 }
 
-function tri2_lda_mllt() {
+function lda_mllt() {
     cond=
+    ali=tri2
     . utils/parse_options.sh
-    mdl=${FEAT_EXP}/tri2_lda_mllt
+    mdl=${FEAT_EXP}/lda_mllt_${ali}
+    ali=$(alignment ${ali})
     train=$TR_CLN
+    
     if [ "$cond" == "mc" ]; then
         train=$TR_MC
         mdl=${mdl}_mc
     fi
     steps/train_lda_mllt.sh \
         --splice-opts "--left-context=$context_size --right-context=$context_size" \
-        2500 15000 $train ${DATA}/lang ${FEAT_EXP}/tri1_ali ${mdl} || exit 1;
+        2500 15000 $train ${DATA}/lang ${ali} ${mdl} || exit 1;
     mkgraph ${mdl}
-    [ "$cond" != "mc" ] && alignment ${mdl}
 }
 
 function nnet2() {
     cond=
     ali=tril
+    fmllr=
     . utils/parse_options.sh
+    echo ${ali}
 
-    mdl=${FEAT_EXP}/nnet2_${ali}
-    ali=${FEAT_EXP}/${ali}_ali
+    mdl=${FEAT_EXP}/$(mdl_name --fmllr "$fmllr" --ali "${ali}" --mc "${cond}" nnet2)
+    ali=$(alignment --fmllr "$fmllr" ${ali})
     train=$TR_CLN
     if [ "$cond" == "mc" ]; then
         train=$TR_MC
-        mdl=${mdl}_mc
     fi
     dnn_extra_opts="--num_epochs 20 --num-epochs-extra 10 --add-layers-period 1 --shrink-interval 3"
-    echo ${mdl}
-    echo $train
-    echo ${ali}
+
     steps/nnet2/train_tanh.sh --mix-up 5000 --initial-learning-rate 0.015 \
         --final-learning-rate 0.002 --num-hidden-layers 2  \
         --num-jobs-nnet "$nj_train" "${dnn_train_extra_opts[@]}" \
         ${train} ${DATA}/lang ${ali} ${mdl}
-
 }
 
 function bottleneck_dnn() {
     cond=
-    ali=tril
+    ali=tri2
+    fmllr=
     stage=-100
     . utils/parse_options.sh
     mdl=${BNF_EXP}/${ali}
-    ali=${FEAT_EXP}/${ali}_ali
+    ali=$(alignment --fmllr "$fmllr" ${ali})
     train=$TR_CLN
     if [ "$cond" == "mc" ]; then
         train=$TR_MC
@@ -153,14 +172,20 @@ function train () {
         [tri1]="tri1_phone" \
         [tri1_mc]="tri1_phone --cond mc" \
         [tri2]="tri2_phone" \
-        [tri2_mc]="tri2_phone --cond mc" \
-        [tri2_lda_mllt]="tri2_lda_mllt" \
-        [tri2_lda_mllt_mc]="tri2_lda_mllt --cond mc" \
+        [tri2_mc]="tri2_phone --cond tri2" \
+        [lda_mllt_tri2]="lda_mllt --ali tri2" \
+        [lda_mllt_tri2_mc]="lda_mllt --cond mc --ali tri2" \
         [nnet2_tri1]="nnet2 --ali tri1" \
         [nnet2_tri1_mc]="nnet2 --ali tri1 --cond mc" \
         [nnet2_tri2]="nnet2 --ali tri2" \
         [nnet2_tri2_mc]="nnet2 --ali tri2 --cond mc" \
+        [nnet2_lda_mllt_tri2]="nnet2 --ali lda_mllt_tri2" \
+        [nnet2_lda_mllt_tri2_mc]="nnet2 --ali lda_mllt_tri2 --cond mc" \
+        [nnet2_lda_mllt_tri2_fmllr]="nnet2 --ali lda_mllt_tri2 --fmllr true" \
+        [nnet2_lda_mllt_tri2_mc_fmllr]="nnet2 --ali lda_mllt_tri2 --cond mc --fmllr true" \
+        [bnf_tri1]="bottleneck_dnn --ali tri1" \
         [bnf_tri1_mc]="bottleneck_dnn --ali tri1 --cond mc" \
+        [bnf_tri2]="bottleneck_dnn --ali tri2" \
         [bnf_tri2_mc]="bottleneck_dnn --ali tri2 --cond mc" \
         )
     
@@ -179,47 +204,8 @@ function train () {
 
 }
 
-
+. check.sh
 echo "### Acoustic Models Train ###"
 
 train ${TR_MDL}
-
-
-# TR_MDL=(mono0a tri1 tri2 tri2_mc tri2_lda_mllt tri2_lda_mllt_mc)
-# TR_MDL=( nnet2_tri1 nnet2_tri1_mc nnet2_tri2 nnet2_tri2_mc )
-# TR_MDL=( bnf_tri1_mc ) 
-# TR_MDL=( nnet2_tri1_mc nnet2_tri2 nnet2_tri2_mc )
-
-# mkgraph ${FEAT_EXP}/tri1
-# mkgraph ${FEAT_EXP}/tri2
-# mk_mc tri2
-# # basis fMLLR for tri2a_mc system
-# # This computes a transform for every training utterance and computes a basis from that.
-
-
-# Recognition using fMLLR adaptation (per-utterance processing).
-# for dataset in ${DATA}/REVERB_dt/SimData_dt* ; do
-#     steps/decode_basis_fmllr.sh --nj $nj_bg \
-#         ${FEAT_EXP}/tri2a_mc/graph_bg_5k $dataset ${FEAT_EXP}/tri2a_mc/decode_basis_fmllr_bg_5k_REVERB_dt_`basename $dataset` || exit 1;
-# done
-
-
-# # decode REVERB dt using tri2a, clean
-# for dataset in ${DATA}/REVERB_dt/SimData_dt* ; do
-#     steps/decode.sh --nj $nj_bg \
-#         ${FEAT_EXP}/tri2a/graph_bg_5k $dataset ${FEAT_EXP}/tri2a/decode_bg_5k_REVERB_dt_`basename $dataset` || exit 1;
-# done
-
-# # decode REVERB dt using tri2a, mc
-# for dataset in ${DATA}/REVERB_dt/SimData_dt*; do
-#     steps/decode.sh --nj $nj_bg \
-#         ${FEAT_EXP}/tri2a_mc/graph_bg_5k $dataset ${FEAT_EXP}/tri2a_mc/decode_bg_5k_REVERB_dt_`basename $dataset` || exit 1;
-# done
-
-
-
-
-
-
-
 
