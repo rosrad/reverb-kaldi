@@ -35,41 +35,6 @@ function mfcc() {
     done
 }
 
-function fmllr() {
-    gmm=tri1_mc
-    label=
-    feat=mfcc
-    . utils/parse_options.sh
-
-    feat_am=${feat^^}_EXP
-    am=${!feat_am}/${gmm}
-    # using  some tricks to expand the the path
-    feat_data_var=${feat^^}_DATA
-    src_data=${!feat_data_var}
-
-    fmllr_var=${feat^^}_FMLLR
-    fmllr_dir=${!fmllr_var}/${gmm}_${label}
-    
-    for tag in $@; do
-        for set in $(find ${src_data}/$tag -maxdepth 1 -type d |grep -P ${src_data}/'[^(si)].*_dt/.*'$reg'.*'|sort ); do
-            fmllr_data=$fmllr_dir/data/$tag/$(basename ${set})
-            echo $fmllr_data
-            # transform_dir=$(ls ${am}|grep FMLLR-$(basename ${set}))
-            transform_dir=$am/$(ls ${am}|grep -P FMLLR-${label}-?$(basename ${set})'$')
-            if [[ ! -f $transform_dir/trans.1 ]]; then
-                echo "ERROR no transform file in $transform_dir"
-            else                
-                steps/make_fmllr_feats.sh --nj $nj_bg --transform-dir $transform_dir \
-                    $fmllr_data \
-                    $set \
-                    $am \
-                    $fmllr_dir/log \
-                    $fmllr_dir/param
-            fi
-        done
-    done
-    
-}
 
 function extract_feats() {
     feat=mfcc
@@ -86,7 +51,6 @@ function extract_feats() {
 function mkfeats () {
     declare -A FEATS=( \
         [mfcc]="mfcc" \
-        [mfcc_fmllr]="fmllr --gmm tri1_mc --feat mfcc" \
         [bnf]="dump_bnf --mdl tri1_mc" \
         [bnf_tri1_mc]="dump_bnf --mdl tri1_mc" \
         )

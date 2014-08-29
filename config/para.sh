@@ -16,3 +16,7 @@ export nj_tg=4
 
 # LDA context size (left/right) (4 is default)
 context_size=4
+
+
+numLeavesTri1=2000
+numGaussTri1=10000

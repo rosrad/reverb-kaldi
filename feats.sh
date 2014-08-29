@@ -35,20 +35,5 @@ export DT="REVERB_dt"
 utils/call.sh \
     local/ExtractFeats.sh mfcc_fmllr 
 
-# train models using  bnf features
-# export FEAT_TYPE=bnf
-# export TR_MDL="mono0a"
-# utils/call.sh \
-#     local/TrainAMs.sh
-
-# export DT="REVERB_tr_cut REVERB_dt"
-# utils/call.sh \
-#     local/ExtractFeats.sh
-
-
-# for Decode and get results of the Development Set
-# DT_MDL="tri1"
-# utils/call.sh \
-# local/TestDTs.sh
 
 
