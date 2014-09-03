@@ -44,6 +44,7 @@ for feat in ${feature_set[*]}; do
     export ${FEAT}_EXP="${WORKSPACE}/exp/${feat}"
     export ${FEAT}_DATA="${FEATS}/${feat}/data"
     export ${FEAT}_FEAT="${FEATS}/${feat}"
+    export ${FEAT}_LOG="${WORKSPACE}/log/${feat}"
     # the var is used for the feature type than need to train some model to extract 
     # for example bottleneck feature
     export ${FEAT}_MDL_EXP="${FEATS}/${feat}/exp"
@@ -62,7 +63,10 @@ export TR_MC=${FEAT_DATA}/REVERB_tr_cut/SimData_tr_for_1ch_A
 # used for create feature relative exp variables
 feat_exp_var=${FEAT_TYPE^^}_EXP
 FEAT_EXP=${!feat_exp_var}
-export FEAT_LOG=${WORKSPACE}/log/${FEAT_TYPE}
+
+# for the feature-type based log 
+feat_log_var=${FEAT_TYPE^^}_LOG
+FEAT_LOG=${!feat_log_var}
 
 # DO NOT CHANGE THIS
 export LD_LIBRARY_PATH=$KALDI_ROOT/tools/openfst-1.3.2/lib:$LD_LIBRARY_PATH

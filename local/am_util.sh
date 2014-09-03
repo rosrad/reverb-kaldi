@@ -5,7 +5,12 @@ function baseam(){
 }
 
 function trans_opts(){
-    echo $(basename $1) | cut -d '_' -f2- |sed 's#_mc$##'|sed 's#_ali$##'
+    echo $(basename $1) \
+        |awk -F'_' '{sep="" ;for(i=2;i<=NF;i++) { if (i==NF && ($i=="mc" || $i == "ali")) continue ; printf "%s%s", sep, $i; sep="_"} printf "\n"}' 
+}
+
+function clean_opts() {
+    echo $1|sed 's#_*$##'|sed 's#^_*##'
 }
 
 function opts2mdl() {
