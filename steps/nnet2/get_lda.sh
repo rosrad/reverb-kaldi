@@ -109,11 +109,12 @@ fi
 
 feats_one="$(echo "$feats" | sed s:JOB:1:g)"
 feat_dim=$(feat-to-dim "$feats_one" -) || exit 1;
-# by default: oo dim reduction.
+# by default: no dim reduction.
 [ -z "$lda_dim" ] && lda_dim=$[$feat_dim*(1+2*($splice_width))]; 
 
 if [ $stage -le 0 ]; then
   echo "$0: Accumulating LDA statistics."
+  rm $dir/lda.*.acc 2>/dev/null # in case any left over from before.
   $cmd JOB=1:$nj $dir/log/lda_acc.JOB.log \
     ali-to-post "ark:gunzip -c $alidir/ali.JOB.gz|" ark:- \| \
       weight-silence-post 0.0 $silphonelist $alidir/final.mdl ark:- ark:- \| \

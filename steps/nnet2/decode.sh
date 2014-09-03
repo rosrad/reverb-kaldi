@@ -61,6 +61,7 @@ done
 
 sdata=$data/split$nj;
 splice_opts=`cat $srcdir/splice_opts 2>/dev/null`
+cmvn_opts=`cat $srcdir/cmvn_opts 2>/dev/null`
 thread_string=
 [ $num_threads -gt 1 ] && thread_string="-parallel --num-threads=$num_threads" 
 
@@ -72,9 +73,9 @@ echo $nj > $dir/num_jobs
 ## Set up features.
 if [ -z "$feat_type" ]; then
   if [ -f $srcdir/final.mat ]; then feat_type=lda; else feat_type=raw; fi
-fi
   echo "$0: feature type is $feat_type"
-cmvn_opts=`cat $srcdir/cmvn_opts 2>/dev/null`
+fi
+
 
 case $feat_type in
   raw) feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- |";;
