@@ -6,20 +6,17 @@ function nnet2() {
     dt=
     dst=
     . utils/parse_options.sh
-
-    graph_am=$(echo $am| sed 's#nnet2_\(.*tri.\).*#\1#')
     echo "am ${am}"
-    echo "graph: ${graph_am}"
 
     steps/nnet2/decode.sh --nj $nj_bg --num-threads 6 $options \
-        ${FEAT_EXP}/${graph_am}/graph_bg_5k $dt $dst
+        ${FEAT_EXP}/${am}/graph_bg_5k $dt $dst
 
 }
 
 function gmm() {
-    am=$1
-    dt=$2
-    dst=$3
+    am=
+    dt=
+    dst=
     . utils/parse_options.sh
 
     decode_script="steps/$(echo decode $*|sed 's# #_#').sh"

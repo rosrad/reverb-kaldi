@@ -3,12 +3,13 @@
 . check.sh
 
 function dump_bnf() {
-    mdl=tril
+    mdl=gmm
     . utils/parse_options.sh
     
     [ ! -d $BNF_MDL_PARAM ] && mkdir -p $BNF_MDL_PARAM
     [ ! -d $BNF_DATA ] && mkdir -p $BNF_DATA
-    mfcc_data=${DATA}
+    mfcc_data=${MFCC_DATA}
+    echo MFCC data dir : ${mfcc_data}
     for tag in $* ;do
         cmd="find  ${mfcc_data}/${tag}/* -maxdepth 0 -type d"
         if [[ $tag =~ ^si_.* ]]; then
@@ -17,6 +18,7 @@ function dump_bnf() {
 
         for dataset in $($cmd); do 
             relative=${dataset/${mfcc_data}/}
+            echo  Relative Path : $relative
             steps/nnet2/dump_bottleneck_features.sh --nj $nj_decode \
                 ${dataset} ${BNF_DATA}/${relative} ${BNF_MDL_EXP}/${mdl} ${BNF_MDL_PARAM} ${BNF_MDL_DUMP}
         done
@@ -51,8 +53,9 @@ function extract_feats() {
 function mkfeats () {
     declare -A FEATS=( \
         [mfcc]="mfcc" \
-        [bnf]="dump_bnf --mdl tri1_mc" \
-        [bnf_tri1_mc]="dump_bnf --mdl tri1_mc" \
+        [bnf]="dump_bnf --mdl gmm_mc" \
+        [bnf_gmm]="dump_bnf --mdl gmm" \
+        [bnf_gmm_mc]="dump_bnf --mdl gmm_mc" \
         )
     
     for feat in $*; do
@@ -66,6 +69,3 @@ function mkfeats () {
 # DT=( PHONE_dt PHONE_SEL_dt )
 # mkfeats mfcc_fmllr
 mkfeats $*
-
-
-
