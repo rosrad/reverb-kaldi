@@ -26,12 +26,12 @@ lexicon=${DATA}/local/lang_tmp/lexiconp.txt
 mkdir -p $tmpdir
 
 for x in si_tr si_dt; do
-  mkdir -p ${DATA}/$x
-  cp $srcdir/${x}_wav.scp ${DATA}/$x/wav.scp || exit 1;
-  cp $srcdir/$x.txt ${DATA}/$x/text || exit 1;
-  cp $srcdir/$x.spk2utt ${DATA}/$x/spk2utt || exit 1;
-  cp $srcdir/$x.utt2spk ${DATA}/$x/utt2spk || exit 1;
-  #utils/filter_scp.pl ${DATA}/$x/spk2utt $srcdir/spk2gender > ${DATA}/$x/spk2gender || exit 1;
+  mkdir -p ${MFCC_DATA}/$x
+  cp $srcdir/${x}_wav.scp ${MFCC_DATA}/$x/wav.scp || exit 1;
+  cp $srcdir/$x.txt ${MFCC_DATA}/$x/text || exit 1;
+  cp $srcdir/$x.spk2utt ${MFCC_DATA}/$x/spk2utt || exit 1;
+  cp $srcdir/$x.utt2spk ${MFCC_DATA}/$x/utt2spk || exit 1;
+  #utils/filter_scp.pl ${MFCC_DATA}/$x/spk2utt $srcdir/spk2gender > ${MFCC_DATA}/$x/spk2gender || exit 1;
 done
 
 

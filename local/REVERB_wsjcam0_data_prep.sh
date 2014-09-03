@@ -102,27 +102,25 @@ perl $local/find_transcripts_singledot.pl $dot \
 
 
     # Make the utt2spk and spk2utt files.
-    cat $dir2/${set}_wav.scp | awk '{print $1, $1}' > $dir2/$set.utt2spk || exit 1;
+    cat $dir2/${set}_wav.scp | awk '{print $1, substr($1,0,3)}' > $dir2/$set.utt2spk || exit 1;
     cat $dir2/$set.utt2spk | $utils/utt2spk_to_spk2utt.pl > $dir2/$set.spk2utt || exit 1;
 
     # Create directory structure required by decoding scripts
 
     cd $root
-    mkdir -p ${DATA}/$dataset/$set
-    cp $dir2/${set}_wav.scp ${DATA}/$dataset/$set/wav.scp || exit 1;
-    cp $dir2/$set.txt ${DATA}/$dataset/$set/text || exit 1;
-    cp $dir2/$set.spk2utt ${DATA}/$dataset/$set/spk2utt || exit 1;
-    cp $dir2/$set.utt2spk ${DATA}/$dataset/$set/utt2spk || exit 1;
+    mkdir -p ${MFCC_DATA}/$dataset/$set
+    cp $dir2/${set}_wav.scp ${MFCC_DATA}/$dataset/$set/wav.scp || exit 1;
+    cp $dir2/$set.txt ${MFCC_DATA}/$dataset/$set/text || exit 1;
+    cp $dir2/$set.spk2utt ${MFCC_DATA}/$dataset/$set/spk2utt || exit 1;
+    cp $dir2/$set.utt2spk ${MFCC_DATA}/$dataset/$set/utt2spk || exit 1;
 
     echo "Data preparation for $set succeeded"
     #echo "Put files into $dir2/$set.*"
 
 
-    mfccdir=${WORKSPACE}/mfcc/$dataset
     #for x in test_eval92_clean test_eval92_5k_clean dev_dt_05_clean dev_dt_20_clean train_si84_clean; do 
     #for x in si_tr; do 
-    steps/make_mfcc.sh --nj 10 \
-        ${DATA}/$dataset/$set ${EXP}/make_mfcc/$dataset/$set $mfccdir || exit 1;
-    steps/compute_cmvn_stats.sh ${DATA}/$dataset/$set ${EXP}/make_mfcc/$dataset/$set $mfccdir || exit 1;
-
+    steps/make_mfcc.sh --nj $nj_decode \
+        ${MFCC_DATA}/$dataset/$set ${FEAT_LOG}/make_feats/$dataset/$set ${MFCC_MDL_PARAM}/$dataset/$set || exit 1;
+    steps/compute_cmvn_stats.sh ${MFCC_DATA}/$dataset/$set ${FEAT_LOG}/make_feats/$dataset/$set ${MFCC_MDL_PARAM}/$dataset/$set || exit 1;
 done

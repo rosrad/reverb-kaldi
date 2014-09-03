@@ -18,8 +18,8 @@
 
 . check.sh
 
-dir=$(readlink -f ${DATA}/local/data)
-lmdir=$(readlink -f ${DATA}/local/nist_lm)
+dir=$(readlink -f ${DATA})/local/data
+lmdir=$(readlink -f ${DATA})/local/nist_lm
 mkdir -p $dir $lmdir
 local=`pwd`/local
 utils=`pwd`/utils
@@ -62,7 +62,6 @@ for set in si_dt ; do
     nl=${nl% *}
     echo "$set: $nl files"
     find $WSJ/data/*/$set -type f -name '*.dot' \
-        | grep '/[a-z0-9]\{3\}/[a-z0-9]\{3\}c02[a-z0-9]\{2\}\.dot$' \
         | xargs cat > $dir/$set.dot
 done
 # cat $dir/si_et_1.dot $dir/si_et_2.dot > $dir/si_et.dot
@@ -92,6 +91,7 @@ done
 # cat si_et_{1,2}_sph.scp > si_et_sph.scp
 
 # for WSJCAM0 training set, there's only one transcript file which contains all training speakers
+
 # just use that
 $local/convert_transcripts.pl $si_tr_dot > si_tr.trans1 || exit 1
 
@@ -104,17 +104,17 @@ $local/convert_transcripts.pl $dir/si_dt.dot > si_dt.trans1 || exit 1
 # data-preparation stage independent of the specific lexicon used.
 noiseword="<NOISE>";
 for x in si_tr si_dt ; do
-    cat $x.trans1 | $local/normalize_transcript.pl $noiseword | sort > $x.txt || exit 1;
+    cat $x.trans1 | $local/normalize_transcript.pl $noiseword | sort -k1|uniq > $x.txt || exit 1;
 done
 
 # Create scp's with wav's. (the wv1 in the distribution is not really wav, it is sph.)
 for x in si_tr si_dt ; do
-    awk '{printf("%s '$sph2pipe' -f wav %s |\n", $1, $2);}' < ${x}_sph.scp > ${x}_wav.scp
+    awk '{printf("%s '$sph2pipe' -f wav %s |\n", $1, $2);}' < ${x}_sph.scp|sort -k1  > ${x}_wav.scp
 done
 
 # Make the utt2spk and spk2utt files.
 for x in si_tr si_dt; do
-    cat ${x}_sph.scp | awk '{print $1, $1}' > $x.utt2spk
+    cat ${x}_sph.scp | awk '{print $1, substr($1,0,3)}' | sort -k1 > $x.utt2spk
     cat $x.utt2spk | $utils/utt2spk_to_spk2utt.pl > $x.spk2utt || exit 1;
 done
 
