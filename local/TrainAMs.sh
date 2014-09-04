@@ -45,9 +45,16 @@ function mono(){
 
 # Create first triphone recognizer.
 function tri1_phone() {
+    cond=
+    . utils/parse_options.sh
     mdl=${FEAT_EXP}/tri1
-    tr_dir=$TR_CLN
     ali=${FEAT_EXP}/mono_ali
+    tr_dir=$TR_CLN
+    if [ "$cond" == "mc" ]; then
+        tr_dir=$TR_MC
+        mdl=${mdl}_mc
+    fi
+
     steps/train_deltas.sh --boost-silence 1.25 \
         2000 10000 $tr_dir ${DATA}/lang ${ali} ${mdl} || exit 1;
     mkgraph ${mdl}
@@ -166,12 +173,14 @@ function bottleneck_dnn() {
         --num-hidden-layers 5 \
         --bottleneck-dim 42 --hidden-layer-dim 1024 \
         ${tr_dir} ${DATA}/lang $ali_dir ${mdl_dir} || exit 1
+    
 }
 
 function train () {
     declare -A MDL=( \
         [mono]="mono" \
         [tri1]="tri1_phone" \
+        [tri1_mc]="tri1_phone --cond mc" \
         [gmm]="gmm" \
         [gmm_mc]="gmm --cond mc" \
         [gmm_sat]="sat --ali gmm " \
@@ -186,8 +195,8 @@ function train () {
         [nnet2_lda_mc]="nnet2 --ali gmm_lda --cond mc" \
         [nnet2_sat_mc]="nnet2 --ali gmm_sat --cond mc" \
         [nnet2_lda_sat_mc]="nnet2 --ali gmm_lda_sat --cond mc" \
-        [bnf]="bottleneck_dnn --ali gmm" \
-        [bnf_mc]="bottleneck_dnn --ali gmm --cond mc" \
+        [bnf]="bottleneck_dnn --ali tri1" \
+        [bnf_mc]="bottleneck_dnn --ali tri1 --cond mc" \
         )
     
     ORDER=($*)

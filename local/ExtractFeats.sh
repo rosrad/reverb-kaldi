@@ -3,7 +3,7 @@
 . check.sh
 
 function dump_bnf() {
-    mdl=gmm
+    mdl=tri1_mc
     nj=
     . utils/parse_options.sh
     
@@ -42,10 +42,8 @@ function mfcc() {
 function mkfeats () {
     declare -A FEATS=( \
         [mfcc]="mfcc" \
-        [bnf]="dump_bnf --mdl gmm_mc" \
-        [bnf_gmm]="dump_bnf --mdl gmm" \
-        [bnf_gmm_mc]="dump_bnf --mdl gmm_mc" \
-        [bnf_global]="dump_bnf --nj 1 --mdl gmm_mc" 
+        [bnf]="dump_bnf --mdl tri1_mc" \
+        [bnf_global]="dump_bnf --nj 1 --mdl tri1_mc" 
         )
     
     for feat in $*; do

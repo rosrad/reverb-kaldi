@@ -61,5 +61,4 @@ FEAT_TYPE=mfcc
 GLOBAL_TARGET="GLOBAL_dt"
 . check.sh
 . local/am_util.sh
-
 mk_all
