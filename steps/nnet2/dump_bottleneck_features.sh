@@ -54,6 +54,7 @@ sdata=$data/split$nj
 
 mkdir -p $dir/log
 mkdir -p $bnf_data
+[[ ! -d ${archivedir} ]] && mkdir -p ${archivedir}
 echo $nj > $nnetdir/num_jobs
 nnet_plice_opts=`cat $nnetdir/nnet_splice_opts 2>/dev/null`
 splice_opts=`cat $nnetdir/splice_opts 2>/dev/null`

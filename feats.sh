@@ -1,5 +1,6 @@
 #!/bin/bash
 
+FEAT_TYPE=mfcc
 . check.sh
 
 # STEP 1 prepare the basic transptions and
@@ -11,8 +12,8 @@
 
 
 # STEP 2 extract mfcc features 
-export DT="REVERB_tr_cut REVERB_dt PHONE_dt PHONE_SEL_dt " 
-# export DT="si_tr si_dt"
+# export DT="REVERB_tr_cut REVERB_dt PHONE_dt PHONE_SEL_dt " 
+export DT="si_tr si_dt"
 for f in bnf ;do
     utils/call.sh \
         local/ExtractFeats.sh  $f

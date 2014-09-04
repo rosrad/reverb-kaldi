@@ -25,3 +25,8 @@ function mc () {
     echo $(basename $1) | sed  's#\(.*\)_mc$##'
 }
 
+function warn_run() {
+    cmd="$@"
+    echo ${cmd}
+    ${cmd}
+}

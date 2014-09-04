@@ -4,11 +4,13 @@
 
 function dump_bnf() {
     mdl=gmm
+    nj=
     . utils/parse_options.sh
     
     [ ! -d $BNF_MDL_PARAM ] && mkdir -p $BNF_MDL_PARAM
     [ ! -d $BNF_DATA ] && mkdir -p $BNF_DATA
     mfcc_data=${MFCC_DATA}
+    [[ -z $nj ]] && nj=$nj_decode
     echo MFCC data dir : ${mfcc_data}
     for tag in $* ;do
         cmd="find  ${mfcc_data}/${tag}/* -maxdepth 0 -type d"
@@ -19,8 +21,8 @@ function dump_bnf() {
         for dataset in $($cmd); do 
             relative=${dataset/${mfcc_data}/}
             echo  Relative Path : $relative
-            steps/nnet2/dump_bottleneck_features.sh --nj $nj_decode \
-                ${dataset} ${BNF_DATA}/${relative} ${BNF_MDL_EXP}/${mdl} ${BNF_MDL_PARAM} ${BNF_MDL_DUMP}
+            steps/nnet2/dump_bottleneck_features.sh --nj $nj \
+                ${dataset} ${BNF_DATA}/${relative} ${BNF_MDL_EXP}/${mdl} ${BNF_MDL_PARAM}/${relative} ${BNF_MDL_DUMP}
         done
     done
 }
@@ -37,25 +39,13 @@ function mfcc() {
     done
 }
 
-
-function extract_feats() {
-    feat=mfcc
-    mdl=
-    . utils/parse_options.sh
-    echo Feature: $feat
-    case $feat in
-        mfcc) mfcc $*;;
-        bnf) dump_bnf --mdl "${mdl}" $* ;;
-        *) echo "Invalid FEAT: ${feat}"
-    esac
-}
-
 function mkfeats () {
     declare -A FEATS=( \
         [mfcc]="mfcc" \
         [bnf]="dump_bnf --mdl gmm_mc" \
         [bnf_gmm]="dump_bnf --mdl gmm" \
         [bnf_gmm_mc]="dump_bnf --mdl gmm_mc" \
+        [bnf_global]="dump_bnf --nj 1 --mdl gmm_mc" 
         )
     
     for feat in $*; do
