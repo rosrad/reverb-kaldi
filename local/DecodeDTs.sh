@@ -7,6 +7,9 @@ function nnet2() {
     dst=
     . utils/parse_options.sh
     echo "am ${am}"
+    echo "Destination Dir : ${dst}"
+
+    [[ ${dst/fmllr/} != ${dst} ]] &&  return
 
     steps/nnet2/decode.sh --nj $nj_bg --num-threads 6 $options \
         ${FEAT_EXP}/${am}/graph_bg_5k $dt $dst
@@ -25,7 +28,7 @@ function gmm() {
 }
 
 function inter_decode() {
-    reg=${REG:-"dt"}    
+    reg=${REG:-""}    
     test=
     . utils/parse_options.sh
     echo ============================================================================

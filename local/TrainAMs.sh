@@ -182,9 +182,10 @@ function train () {
         [gmm_lda_sat_mc]="sat --ali gmm_lda --cond mc --fmllr ture " \
         [nnet2]="nnet2 --ali gmm" \
         [nnet2_mc]="nnet2 --ali gmm --cond mc" \
-        [nnet2_mc_adapt]="nnet2 --ali gmm --cond mc" \
         [nnet2_lda]="nnet2 --ali gmm_lda" \
         [nnet2_lda_mc]="nnet2 --ali gmm_lda --cond mc" \
+        [nnet2_sat_mc]="nnet2 --ali gmm_sat --cond mc" \
+        [nnet2_lda_sat_mc]="nnet2 --ali gmm_lda_sat --cond mc" \
         [bnf]="bottleneck_dnn --ali gmm" \
         [bnf_mc]="bottleneck_dnn --ali gmm --cond mc" \
         )

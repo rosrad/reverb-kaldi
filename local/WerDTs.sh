@@ -2,7 +2,7 @@
 . check.sh
 
 function wer_dt() {
-    reg=${REG:-"dt"}
+    reg=${REG:-""}
     regex='decode_.*'${reg}'.*[^(si)]$'
     echo ============================================================================
     echo "                    Getting Results                                       "
