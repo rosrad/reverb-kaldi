@@ -4,8 +4,7 @@
 function mk_lik_list() {
     mdl=gmm
     . utils/parse_options.sh
-
-    tag_list=($*)
+    local tag_list=($*)
 
     echo "gather the likelihood of each utterance for each set"
     dir=${FEAT_AUTOSEL}/${mdl}
@@ -18,33 +17,27 @@ function mk_lik_list() {
     done
 }       
 
-function warn_run() {
-    cmd="$@"
-    echo ${cmd}
-    ${cmd}
-}
-
 function sel_maximum() {
     target=${AUTOSEL_TARGET}
     source=${AUTOSEL_SOURCE}
-    set_tag="PHONE_MLLD"
+    set_tag="PhoneMlld_dt_for_set1"
     mdl=gmm
     . utils/parse_options.sh
 
     dir=${FEAT_AUTOSEL}/${mdl}
-    tag_list=$(echo $* | awk '{for (i=1; i<=NF; i++) printf "'${dir}/'%s.lik ",$i}')
-    tags=($*)
-
+    local tag_list=$(echo $* | awk '{for (i=1; i<=NF; i++) printf "'${dir}/'%s.lik ",$i}')
+    local tags=($*)
 
     FEAT_AUTOSEL_SOURCE=${FEAT_DATA}/${source}
     FEAT_AUTOSEL_TARGET=${FEAT_DATA}/${target}
     utt_suffix="selected_uttids"
-    echo ${tags[@]}
+    echo TAGS: ${tags[@]}
+
     paste ${tag_list} \
-        | awk '{ max=2; for (i=max; i<=NF; i+=2) {if ($i > $max) max=i;} printf "%s %d\n",$1,max/2;}' \
+        | awk '{ min=2; for (i=min; i<=NF; i+=2) {if ($i < $min) min=i;} printf "%s %d\n",$1,min/2;}' \
         | sort -k2 \
         | awk '{print $1 > "'${dir}'/" $2 "'.${utt_suffix}'" }'
-
+    
     autosel_data=${FEAT_AUTOSEL_TARGET}/${set_tag}
     [[ ! -d ${autosel_data} ]] && mkdir -p ${autosel_data}
 
@@ -70,13 +63,13 @@ function mk_feats() {
         case ${f} in
             mfcc) echo "we have the mfcc already";;
             bnf) export DT=${AUTOSEL_TARGET}; local/ExtractFeats.sh  bnf;;
-*) echo "invalid feature type!"
-esac
-done
+            *) echo "invalid feature type!"
+        esac
+    done
 }
 
 function selection() {
-    tag_list=$(ls ${FEAT_DATA}/${AUTOSEL_SOURCE})
+    tag_list=$(ls ${MFCC_DATA}/${AUTOSEL_SOURCE})
     echo tag list : ${tag_list}
     # mk_lik_list --mdl gmm ${tag_list} 
     sel_maximum --mdl gmm ${tag_list}
@@ -86,7 +79,7 @@ function selection() {
 
 export FEAT_TYPE=mfcc
 . check.sh
-
+. local/am_util.sh
 export AUTOSEL=${WORKSPACE}/auto_select
 export FEAT_AUTOSEL=${AUTOSEL}/${FEAT_TYPE}
 export AUTOSEL_TARGET="PHONE_MLLD_dt"
