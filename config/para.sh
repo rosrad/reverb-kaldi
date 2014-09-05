@@ -5,7 +5,7 @@
 export lms="bg_5k tg_5k"
 
 # number of jobs for feature extraction and model training
-export nj_train=10
+export nj_train=16
 export nj_decode=8
 # number of jobs for decoding
 # use less jobs for trigram model

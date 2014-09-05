@@ -55,18 +55,18 @@ done
 
 # used for create the feature relatived variables
 feat_data_var=${FEAT_TYPE^^}_DATA
-FEAT_DATA=${!feat_data_var}
+export FEAT_DATA=${!feat_data_var}
 
 export DT_DATA=${FEAT_DATA}
 export TR_CLN=${FEAT_DATA}/si_tr
 export TR_MC=${FEAT_DATA}/REVERB_tr_cut/SimData_tr_for_1ch_A
 # used for create feature relative exp variables
 feat_exp_var=${FEAT_TYPE^^}_EXP
-FEAT_EXP=${!feat_exp_var}
+export FEAT_EXP=${!feat_exp_var}
 
 # for the feature-type based log 
 feat_log_var=${FEAT_TYPE^^}_LOG
-FEAT_LOG=${!feat_log_var}
+export FEAT_LOG=${!feat_log_var}
 
 # DO NOT CHANGE THIS
 export LD_LIBRARY_PATH=$KALDI_ROOT/tools/openfst-1.3.2/lib:$LD_LIBRARY_PATH

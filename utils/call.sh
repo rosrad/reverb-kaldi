@@ -9,6 +9,7 @@ tag=
 
 echo "Executing $@"
 [[ -n $tag ]] && tag=.${tag}
+
 log=${FEAT_LOG}/$(basename $1)${tag}.log.$(date +%Y%m%d-%H:%M)
 date > $log
 eval $@ 2>&1 | tee -a $log

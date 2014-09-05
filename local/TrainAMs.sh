@@ -162,11 +162,11 @@ function bottleneck_dnn() {
 
     alignment ${ali_src} ${tr_dir}
     ali_dir=$(alignment ${ali_src} ${tr_dir})
-
+    # --num-threads 1 
     [[ ! -e $BNF_MDL_EXP ]] && mkdir -p ${BNF_MDL_EXP}
     steps/nnet2/train_tanh_bottleneck.sh \
-        --stage $stage --num-jobs-nnet 4 \
-        --num-threads 1 --mix-up 5000 --max-change 40 \
+        --stage $stage --num-jobs-nnet ${nj_train} \
+        --mix-up 5000 --max-change 40 \
         --minibatch-size 512 \
         --initial-learning-rate 0.005 \
         --final-learning-rate 0.0005 \
