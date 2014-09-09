@@ -13,6 +13,9 @@ function clean_opts() {
     echo $1|sed 's#_*$##'|sed 's#^_*##'
 }
 
+function concat_opts() {
+	echo $@|sed 's# #_#g'
+}
 function opts2mdl() {
     echo ${1}_${2}|sed 's#_$##'
 }

@@ -8,19 +8,26 @@ function alignment() {
         echo "Usage: alignment gmm"
         exit 1;
     fi
-    mdl=$1
-    tr_dir=$2
-    dst_ali=${mdl}_ali
-    ali_script="align_si.sh"
-    if [[ -n $fmllr ]]; then
+    local mdl=$1
+    local tr_dir=$2
+    local dst_ali=${mdl}_ali
+    local ali_script="align_si.sh"
+	local options=
+
+	if [[ ${fmllr} == "raw" ]] ;then
+        ali_script="align_raw_fmllr.sh"
+        dst_ali=${mdl}_raw_fmllr_ali
+		options="--use-graphs true"
+    elif [[ -n $fmllr ]]; then
         ali_script="align_fmllr.sh"
         dst_ali=${mdl}_fmllr_ali
     fi        
-    if [ ! -e ${dst_ali}/ali.1.gz ]; then
-        steps/${ali_script} --nj $nj_decode ${@:3} \
-            $tr_dir ${DATA}/lang ${mdl} ${dst_ali} || exit 1;
-    fi
-    echo ${dst_ali}
+
+	if [ ! -e ${dst_ali}/ali.1.gz ]; then
+		steps/${ali_script} --nj $nj_decode ${@:3} \
+			$tr_dir ${DATA}/lang ${mdl} ${dst_ali} || exit 1;
+	fi
+	echo ${dst_ali}
 }
 
 function mkgraph() {
@@ -85,17 +92,22 @@ function sat() {
     fmllr=
     ali=gmm
     . utils/parse_options.sh
-    mdl_dir=${FEAT_EXP}/$(opts2mdl ${ali} sat)
-    ali_src=${FEAT_EXP}/${ali}
-    tr_dir=$TR_CLN
+	local opts="${ali}"
+	[[ ${fmllr/raw/} != $fmllr ]] && opts+=" raw"
+    local mdl_dir=${FEAT_EXP}/$(concat_opts ${opts} sat)
+    local ali_src=${FEAT_EXP}/${ali}
+	local tr_dir=$TR_CLN
     if [ "$cond" == "mc" ]; then
         tr_dir=$TR_MC
         mdl_dir=${mdl_dir}_mc
         ali_src=${FEAT_EXP}/$(opts2mdl ${ali} mc)
     fi
     alignment --fmllr "$fmllr" ${ali_src} ${tr_dir}
-    ali_dir=$(alignment --fmllr "$fmllr" ${ali_src} ${tr_dir})
-    steps/train_sat.sh \
+    local ali_dir=$(alignment --fmllr "$fmllr" ${ali_src} ${tr_dir})
+
+	local script="train_sat.sh"
+	[[ ${fmllr/raw/} != $fmllr ]] && script="train_raw_sat.sh"
+	steps/${script} \
         2500 15000 $tr_dir ${DATA}/lang ${ali_dir} ${mdl_dir} || exit 1;
     mkgraph ${mdl_dir}
 }
@@ -125,17 +137,28 @@ function lda() {
 function nnet2() {
     cond=
     ali=gmm
+	fmllr=
     . utils/parse_options.sh
-    mdl_dir=${FEAT_EXP}/$(ali2mdl nnet2 ${ali})
-    ali_src=${FEAT_EXP}/${ali}
-    tr_dir=$TR_CLN
+	local opts=
+	[[ -n ${fmllr} ]] && opts="${fmllr}"
+
+	local mdl_dir=${FEAT_EXP}/$(concat_opts $(ali2mdl nnet2 ${ali}) ${opts})
+	local ali_src=${FEAT_EXP}/${ali}
+	local tr_dir=$TR_CLN
     if [ "$cond" == "mc" ]; then
         tr_dir=$TR_MC
         mdl_dir=${mdl_dir}_mc
         ali_src=${FEAT_EXP}/$(opts2mdl ${ali} mc)
     fi
-    alignment $ali_src $tr_dir
-    ali_dir=$(alignment $ali_src $tr_dir)
+	local ali_opts=
+	[[ -n ${fmllr} ]] && ali_opts="--fmllr ${fmllr}"
+    alignment $ali_opts $ali_src $tr_dir
+    ali_dir=$(alignment $ali_opts $ali_src $tr_dir)
+
+	if [[ -n ${fmllr} ]]; then
+		fmllr_tr_mc $(basename $ali_src)
+		tr_dir=${FMLLR_TR_MC}
+	fi
     dnn_extra_opts="--num_epochs 20 --num-epochs-extra 10 --add-layers-period 1 --shrink-interval 3"
     steps/nnet2/train_tanh.sh --mix-up 5000 --initial-learning-rate 0.015 \
         --final-learning-rate 0.002 --num-hidden-layers 2  \
@@ -162,11 +185,12 @@ function bottleneck_dnn() {
 
     alignment ${ali_src} ${tr_dir}
     ali_dir=$(alignment ${ali_src} ${tr_dir})
-    # --num-threads 1 
+
     [[ ! -e $BNF_MDL_EXP ]] && mkdir -p ${BNF_MDL_EXP}
     steps/nnet2/train_tanh_bottleneck.sh \
-        --stage $stage --num-jobs-nnet ${nj_train} \
-        --mix-up 5000 --max-change 40 \
+        --stage $stage --num-jobs-nnet 3 \
+		--num-threads 1 \
+		--mix-up 5000 --max-change 40 \
         --minibatch-size 512 \
         --initial-learning-rate 0.005 \
         --final-learning-rate 0.0005 \
@@ -184,17 +208,22 @@ function train () {
         [gmm]="gmm" \
         [gmm_mc]="gmm --cond mc" \
         [gmm_sat]="sat --ali gmm " \
-        [gmm_sat_mc]="sat --ali gmm --cond mc" \
+        [gmm_sat_mc]="sat --ali gmm --cond mc " \
+		[gmm_raw_sat_mc]="sat --ali gmm --cond mc --fmllr raw" \
         [gmm_lda]="lda --ali gmm" \
         [gmm_lda_mc]="lda --cond mc --ali gmm" \
-        [gmm_lda_sat]="sat --ali gmm_lda --fmllr ture" \
-        [gmm_lda_sat_mc]="sat --ali gmm_lda --cond mc --fmllr ture " \
+        [gmm_lda_sat]="sat --ali gmm_lda --fmllr fmllr" \
+        [gmm_lda_sat_mc]="sat --ali gmm_lda --cond mc --fmllr fmllr " \
+		[gmm_lda_raw_sat_mc]="sat --ali gmm_lda --cond mc --fmllr raw" \
         [nnet2]="nnet2 --ali gmm" \
         [nnet2_mc]="nnet2 --ali gmm --cond mc" \
+		[nnet2_fmllr_mc]="nnet2 --ali gmm --cond mc --fmllr fmllr" \
         [nnet2_lda]="nnet2 --ali gmm_lda" \
         [nnet2_lda_mc]="nnet2 --ali gmm_lda --cond mc" \
+		[nnet2_lda_mc]="nnet2 --ali gmm_lda --cond mc --fmllr raw" \
         [nnet2_sat_mc]="nnet2 --ali gmm_sat --cond mc" \
         [nnet2_lda_sat_mc]="nnet2 --ali gmm_lda_sat --cond mc" \
+        [nnet2_lda_raw_sat_mc]="nnet2 --ali gmm_lda_raw_sat --cond mc --fmllr raw" \
         [bnf]="bottleneck_dnn --ali tri1" \
         [bnf_mc]="bottleneck_dnn --ali tri1 --cond mc" \
         )
@@ -218,4 +247,4 @@ echo "### Acoustic Models Train ###"
 
 train ${TR_MDL}
 # mkgraph ${FEAT_EXP}/gmm_lda_mc
-# alignment ${FEAT_EXP}/mono $TR_CLN --boost-silence 1.25
+# alignment  ${FEAT_EXP}/mono $TR_CLN

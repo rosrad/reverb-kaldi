@@ -10,9 +10,10 @@ function nnet2() {
     [[ -z $nj ]] && nj=${nj_decode}
 
     local options=
-    if [[ ${dst/fmllr/} != ${dst} ]]; then
+	local file=$(basename ${dst})
+	if [[ ${file/fmllr/} != ${file} ]]; then
         local fmllr_gmm=$(echo ${TRANSFORM_PAIRS}|awk 'BEGIN{RS=" "; FS="-"} $1 ~ /^'${am}'$/{print $2}')
-        local fmllr_dir=${FEAT_EXP}/${fmllr_gmm}/$(basename ${dst}) # 
+        local fmllr_dir=${FEAT_EXP}/${fmllr_gmm}/${file}
         [[ -d $fmllr_dir ]] &&  options="--transform-dir ${fmllr_dir}" # make sure it is exit
         [[ -z ${options} ]] && return 1 # 
     fi
@@ -46,7 +47,8 @@ function inter_decode() {
     echo "### GmmHmm Decode using DT:${reg} ###"
     local opts=$(echo $*|sed 's# #_#')#
     for am in ${DT_MDL[*]}; do
-        for dt in $(find ${DT_DATA} -maxdepth 2 -type d  | grep -P ${DT_DATA}'/([A-Z]+_){1,}dt/.*'$reg'.*'|sort);do
+        for dt in $(find ${DT_DATA}/ -maxdepth 2 -xtype d  | grep -P ${DT_DATA}'/([A-Z]+_){1,}dt/'|sort);do
+            [[ -z $(basename $dt | grep -P $reg) ]] && continue
             base_am=$(baseam $am )
             dst="${FEAT_EXP}/${am}/decode_${opts}$(basename $dt)"
             local options=
@@ -68,6 +70,7 @@ function decode () {
         [test]="inter_decode --test ture  " \
         [normal]="inter_decode  " \
         [fmllr]="inter_decode fmllr " \
+        [raw_fmllr]="inter_decode raw_fmllr " \
         )
 
     list=($*)
