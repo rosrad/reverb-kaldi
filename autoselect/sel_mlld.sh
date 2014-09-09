@@ -72,7 +72,7 @@ function selection() {
     tag_list=$(ls ${MFCC_DATA}/${AUTOSEL_SOURCE})
     echo tag list : ${tag_list}
     # mk_lik_list --mdl gmm ${tag_list} 
-    sel_maximum --mdl gmm ${tag_list}
+    # sel_maximum --mdl gmm ${tag_list}
     mk_feats bnf
 }
 

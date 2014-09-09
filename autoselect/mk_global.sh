@@ -7,8 +7,8 @@
 
 function global(){
     src_dir=$1
-    tag=$(basename ${src_dir})
-
+    tag="Global_$(basename ${src_dir})"
+    echo $tag
     # check the source dir
     [[ ! -d "$(pwd)/${src_dir}" ]] && (echo "Error: Source data dir does not exist!"; echo "Src :${src_dir}") && return
 
