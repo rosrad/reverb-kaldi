@@ -62,7 +62,7 @@ function mk_feats() {
     for f in $* ; do
         case ${f} in
             mfcc) echo "we have the mfcc already";;
-            bnf) export DT=${AUTOSEL_TARGET}; local/ExtractFeats.sh  bnf;;
+            bnf*) export DT=${AUTOSEL_TARGET}; local/ExtractFeats.sh  ${f};;
             *) echo "invalid feature type!"
         esac
     done
@@ -73,7 +73,7 @@ function selection() {
     echo tag list : ${tag_list}
     # mk_lik_list --mdl gmm ${tag_list} 
     # sel_maximum --mdl gmm ${tag_list}
-    mk_feats bnf
+    mk_feats bnf_org
 }
 
 

@@ -51,10 +51,9 @@ function mk_all(){
 
 
 
-export FEAT_TYPE=mfcc
-export FMLLR_GMM=gmm_mc
+export FEAT_TYPE=bnf
+# export FMLLR_GMM=gmm_mc
 . check.sh
 . local/am_util.sh
-fmllr_tr_mc gmm_lda_mc
 echo "${FMLLR_TR_MC}"
 # mk_all
