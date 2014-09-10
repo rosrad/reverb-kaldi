@@ -12,6 +12,9 @@ function nnet2() {
     local options=
 	local file=$(basename ${dst})
 	if [[ ${file/fmllr/} != ${file} ]]; then
+		echo "DNN can not do the fmllr directlly."
+		return 1;
+
         local fmllr_gmm=$(echo ${TRANSFORM_PAIRS}|awk 'BEGIN{RS=" "; FS="-"} $1 ~ /^'${am}'$/{print $2}')
         local fmllr_dir=${FEAT_EXP}/${fmllr_gmm}/${file}
         [[ -d $fmllr_dir ]] &&  options="--transform-dir ${fmllr_dir}" # make sure it is exit

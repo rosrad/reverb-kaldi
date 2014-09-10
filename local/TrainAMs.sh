@@ -43,7 +43,7 @@ function mkgraph() {
 
 # Train monophone model on clean data (si_tr).
 function mono(){
-    mdl=${FEAT_EXP}/mono
+    mdl=${MFCC_EXP}/mono
     steps/train_mono.sh --boost-silence 1.25 --nj $nj_train \
         $TR_CLN ${DATA}/lang ${mdl} || exit 1;
     mkgraph  ${mdl} --mono
@@ -54,8 +54,8 @@ function mono(){
 function tri1_phone() {
     cond=
     . utils/parse_options.sh
-    mdl=${FEAT_EXP}/tri1
-    ali=${FEAT_EXP}/mono_ali
+    mdl=${MFCC_EXP}/tri1
+    ali=${MFCC_EXP}/mono_ali
     tr_dir=$TR_CLN
     if [ "$cond" == "mc" ]; then
         tr_dir=$TR_MC
@@ -76,7 +76,7 @@ function gmm() {
     . utils/parse_options.sh
     mdl=${FEAT_EXP}/gmm
     tr_dir=$TR_CLN
-    ali=${FEAT_EXP}/tri1_ali
+    ali=${MFCC_EXP}/tri1_ali	# we are only using the mfcc exp for triphone gmm
     if [ "$cond" == "mc" ]; then
         tr_dir=$TR_MC
         mdl=${mdl}_mc
@@ -172,7 +172,7 @@ function bottleneck_dnn() {
     cond=
     ali=gmm
     stage=-100
-
+	tag=
     . utils/parse_options.sh
     mdl_dir=${BNF_MDL_EXP}/${ali}
     ali_src=${FEAT_EXP}/${ali} 
@@ -185,10 +185,12 @@ function bottleneck_dnn() {
 
     alignment ${ali_src} ${tr_dir}
     ali_dir=$(alignment ${ali_src} ${tr_dir})
-
+	
     [[ ! -e $BNF_MDL_EXP ]] && mkdir -p ${BNF_MDL_EXP}
-    steps/nnet2/train_tanh_bottleneck.sh \
-        --stage $stage --num-jobs-nnet 3 \
+	
+	[[ -n $tag ]] && mdl="${mdl}.${tag}"
+	steps/nnet2/train_tanh_bottleneck.sh \
+        --stage $stage --num-jobs-nnet 4 \
 		--num-threads 1 \
 		--mix-up 5000 --max-change 40 \
         --minibatch-size 512 \
@@ -226,6 +228,7 @@ function train () {
         [nnet2_lda_raw_sat_mc]="nnet2 --ali gmm_lda_raw_sat --cond mc --fmllr raw" \
         [bnf]="bottleneck_dnn --ali tri1" \
         [bnf_mc]="bottleneck_dnn --ali tri1 --cond mc" \
+		[bnf_mc.gpu_512]="bottleneck_dnn --ali tri1 --cond mc --tag gpu_512" \
         )
     
     ORDER=($*)
