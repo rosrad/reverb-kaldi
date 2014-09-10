@@ -2,18 +2,19 @@
 
 . check.sh
 
-export FEAT_TYPE=mfcc
+export FEAT_TYPE=bnf
 # export DT_MDL_GMM="gmm gmm_sat gmm_lda gmm_lda_sat gmm_mc gmm_sat_mc gmm_lda_mc gmm_lda_sat_mc" 
 # export DT_MDL_GMM="gmm_lda_mc"
-export DT_MDL_GMM="gmm gmm_lda  gmm_mc  gmm_lda_mc" # 
+export DT_MDL_GMM="gmm_mc" # 
 # export DT_MDL_DNN="nnet2 nnet2_sat nnet2_lda nnet2_lda_sat nnet2_mc nnet2_sat_mc nnet2_lda_mc nnet2_lda_sat_mc"
-export DT_MDL_DNN="nnet2  nnet2_lda  nnet2_mc  nnet2_lda_mc" 
-all=true
+export DT_MDL_DNN="nnet2_mc nnet2_lda_mc " 
+export REG="^(?!Global).*dt.*"
+
+all=false
 dnn=false
-gmm=false
+gmm=true
 
 $all && (
-    export REG="dt"
     export DT_MDL="${DT_MDL_GMM} ${DT_MDL_DNN}"
     utils/call.sh \
         local/WerDTs.sh
@@ -21,7 +22,6 @@ $all && (
 )
 
 $gmm && (
-    export REG="dt"
     export DT_MDL="${DT_MDL_GMM}"
     utils/call.sh \
         local/WerDTs.sh
@@ -29,7 +29,6 @@ $gmm && (
 )
 
 $dnn && (
-    export REG="dt"
     export DT_MDL="${DT_MDL_DNN}"
     utils/call.sh \
         local/WerDTs.sh
