@@ -64,6 +64,7 @@ function mkfeats () {
         [bnf_mc]="dump_bnf --mdl tri1_mc" \
 		[bnf_org]="dump_bnf --mdl tri1_mc.org" \
         [bnf_cln]="dump_bnf --mdl tri1" \
+		[bnf_test]="dump_bnf --mdl tri1_mc.gpu_256" \		
         [bnf_global]="dump_bnf --nj 1 --mdl tri1_mc" 
     )
     

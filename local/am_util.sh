@@ -12,6 +12,21 @@ function trans_opts(){
 function clean_opts() {
     echo $1|sed 's#_*$##'|sed 's#^_*##'
 }
+function mk_uniq() {
+
+	local mdl=$(echo $@ | cut -d'_' -f1)
+	local uniq_opts=$(echo $@| cut -d'_' -f2- |tr -s '_' \\n |sort|uniq)
+	printf "${mdl}\n${uniq_opts}" | tr -s \\n '_' \
+		|sed 's#_*$##'|sed 's#^_*##'
+}
+
+function uniq_mdl() {
+	local mdl=$1
+	local uniq_opts=$(echo ${@:2:}|tr -s ' ' \\n |sort|uniq)
+	printf "${mdl}\n${uniq_opts}" | tr -s \\n '_' \
+		|sed 's#_*$##'|sed 's#^_*##'
+}
+
 
 function concat_opts() {
 	echo $@|sed 's# #_#g'

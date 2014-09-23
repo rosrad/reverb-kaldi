@@ -6,7 +6,7 @@ function fmllr(){
 	src_dir=$1
 
 	src_file=$(basename ${src_dir})
-	local tag="Fmllr_${mdl}_${src_file}"
+	local tag="${FMLLR_PREFIX}_${mdl}_${src_file}"
     [[ ! -d "$(pwd)/${src_dir}" ]] && (echo "Error: Source data dir does not exist!"; echo "Src :${src_dir}") && return
 	local target_set=${FEAT_DATA}/${FMLLR_TARGET}/${tag}
 	[[ ! -d ${target_set} ]] && warn_run mkdir -p ${target_set}
@@ -20,6 +20,7 @@ function fmllr(){
 		return 1
 	fi
 
+	local opts=()
 	steps/nnet/make_fmllr_feats.sh  \
 		--transform-dir $transform_dir \
 		${target_set} \
@@ -28,7 +29,7 @@ function fmllr(){
 		${FEAT_LOG}/make_feats/${FMLLR_TARGET}/${tag} \
 		${FEAT_MDL_PARAM}/${FMLLR_TARGET}/${tag}
 	# make the cmvn 
-    steps/compute_cmvn_stats.sh ${target_set} \
+	steps/compute_cmvn_stats.sh ${target_set} \
 		${FEAT_LOG}/make_fmllr_feats/${FMLLR_TARGET}/${tag} \
 		${FEAT_MDL_PARAM}/${FMLLR_TARGET}/${tag}
 }
@@ -36,14 +37,15 @@ function fmllr(){
 function mk_all(){
 	mdl=${1} 			# this should not be a clean model
 
-	[[ -z ${mdl} ]] && mdl=${FMLLR_GMM}
+	[[ -z ${mdl} ]] && mdl=${DEFAULT_FMLLR_GMM}
 	[[ -n ${mdl} ]] && options="--mdl ${mdl}"
 
+	
 	echo "Making fMLLR features "
 	# make fmllr of and multi-conditon train set
 	warn_run fmllr "${options}" --type "train" ${TR_MC}
 	# make fmllr of dev set
-    for d in  $(find ${FEAT_DATA} -maxdepth 2 -type d |grep -P ${FEAT_DATA}'/([A-Z]+_){1,}dt/' |grep -v "FMLLR" | grep -v "GLOBAL"|sort) ; do
+    for d in  $(find ${FEAT_DATA}/ -maxdepth 2 -xtype d |grep -P ${FEAT_DATA}'/([A-Z]+_){1,}dt/' |grep -v "FMLLR" | grep -v "GLOBAL"|sort) ; do
 		fmllr ${options} --type "dev" ${d}
     done
 }
@@ -51,9 +53,8 @@ function mk_all(){
 
 
 
-export FEAT_TYPE=bnf
-# export FMLLR_GMM=gmm_mc
+export FEAT_TYPE=mfcc
+export FMLLR_TYPE=raw
 . check.sh
 . local/am_util.sh
-echo "${FMLLR_TR_MC}"
-# mk_all
+mk_all

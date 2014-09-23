@@ -2,6 +2,7 @@
 
 function alignment() {
     fmllr=
+	opts=
     . utils/parse_options.sh
     if [ $# -lt 1 ]; then
         echo "Error: no enough paramaters!"
@@ -24,7 +25,7 @@ function alignment() {
     fi        
 
 	if [ ! -e ${dst_ali}/ali.1.gz ]; then
-		steps/${ali_script} --nj $nj_decode ${@:3} \
+		steps/${ali_script} --nj $nj_decode ${opts} ${@:3} \
 			$tr_dir ${DATA}/lang ${mdl} ${dst_ali} || exit 1;
 	fi
 	echo ${dst_ali}
@@ -73,19 +74,151 @@ function tri1_phone() {
 
 function gmm() {
     cond=
+	feat=
     . utils/parse_options.sh
-    mdl=${FEAT_EXP}/gmm
-    tr_dir=$TR_CLN
-    ali=${MFCC_EXP}/tri1_ali	# we are only using the mfcc exp for triphone gmm
+	if [[ -n $feat ]];then
+		tr_opts="--feat_type ${feat}"
+		opts="${feat}"
+	fi
+
+	local mdl_dir=${FEAT_EXP}/$(mk_uniq $(concat_opts gmm ${opts}))	
+	echo "MDL ${mdl_dir}"
+	local tr_dir=$TR_CLN
+    local ali=${MFCC_EXP}/tri1_ali	# we are only using the mfcc exp for triphone gmm
     if [ "$cond" == "mc" ]; then
         tr_dir=$TR_MC
-        mdl=${mdl}_mc
+        mdl_dir=${mdl_dir}_mc
     fi
 
-    steps/train_deltas.sh \
-        2500 15000 $tr_dir ${DATA}/lang $ali ${mdl} || exit 1;
-    mkgraph  ${mdl}
+    steps/train_deltas.sh ${tr_opts} \
+        2500 15000 \
+		$tr_dir ${DATA}/lang $ali ${mdl_dir} \
+		|| exit 1;
+
+    mkgraph  ${mdl_dir}
 }
+
+function gmm_splice() {
+	cond=
+    fmllr=
+    ali=gmm
+    . utils/parse_options.sh
+    mdl_dir=${FEAT_EXP}/$(opts2mdl ${ali} splice)
+    ali_src=${FEAT_EXP}/${ali}
+    tr_dir=$TR_CLN
+    if [ "$cond" == "mc" ]; then
+        tr_dir=$TR_MC
+        mdl_dir=${mdl_dir}_mc
+        ali_src=${FEAT_EXP}/$(opts2mdl ${ali} mc)
+	fi
+	[[ -n $fmllr ]] && ali_opt="--fmllr $fmllr"
+    alignment ${ali_opt} ${ali_src} ${tr_dir}
+    local ali_dir=$(alignment ${ali_opt} ${ali_src} ${tr_dir})
+	steps/train_splice.sh \
+		--splice-opts "--left-context=2 --right-context=2" \
+		1200 10000  \
+		$tr_dir ${DATA}/lang ${ali_dir} ${mdl_dir} \
+		|| return 1
+
+    mkgraph  ${mdl_dir}
+}
+
+function ubm() {
+	cond=
+    ali=gmm_splice
+	opts=
+    . utils/parse_options.sh
+
+	option=()
+	if [[ ${opts/fmllr/} != ${opts} || ${ali/fmllr/} != ${ali} ]];then
+		option+=("fmllr")
+		fmllr="fmllr"
+	fi
+	if [[ ${opts/raw/} != ${opts} || ${ali/raw/} != ${ali} ]];then
+		option+=("raw")
+		raw="raw"
+	fi
+
+	local mdl_dir=${FEAT_EXP}/$(mk_uniq $(concat_opts $(ali2mdl ubm ${ali}) ${option[@]}))
+	echo $mdl_dir
+    local ali_src=${FEAT_EXP}/${ali}
+    local tr_dir=$TR_CLN
+    if [ "$cond" == "mc" ]; then
+        tr_dir=$TR_MC
+        mdl_dir=${mdl_dir}_mc
+        ali_src=${FEAT_EXP}/$(opts2mdl ${ali} mc)
+	fi
+    
+	local ali_opts=
+	[[ -n ${fmllr} ]] && ali_opts="--fmllr ${fmllr}"
+    alignment $ali_opts $ali_src $tr_dir
+    local ali_dir=$(alignment $ali_opts $ali_src $tr_dir)
+
+	if [[ -n ${fmllr} ]]; then
+		fmllr_tr_mc $(concat_opts gmm ${raw} mc)
+		tr_dir=${FMLLR_TR_MC}
+	fi
+
+	steps/train_ubm_splice.sh  ${tr_opts}\
+		100 \
+		$tr_dir ${DATA}/lang ${ali_dir} ${mdl_dir} \
+		|| return 1
+    # mkgraph  ${mdl_dir}
+}
+
+function plda() {
+	cond=
+    ali=gmm
+	ubm=ubm
+	opts=
+    . utils/parse_options.sh
+
+	option=()
+	if [[ ${opts/fmllr/} != ${opts} || ${ali/fmllr/} != ${ali} ]];then
+		option+=("fmllr")
+		fmllr="fmllr"
+	fi
+	if [[ ${opts/raw/} != ${opts} || ${ali/raw/} != ${ali} ]];then
+		option+=("raw")
+		raw="raw"
+	fi
+
+	local mdl_dir=${FEAT_EXP}/$(mk_uniq $(concat_opts $(ali2mdl plda ${ali}) ${option[@]}))
+    local ali_src=${FEAT_EXP}/${ali}
+    local tr_dir=$TR_CLN
+	local ubm_dir=${FEAT_EXP}/${ubm}
+    if [ "$cond" == "mc" ]; then
+        tr_dir=$TR_MC
+        mdl_dir=${mdl_dir}_mc
+        ali_src=${FEAT_EXP}/$(opts2mdl ${ali} mc)
+		ubm_dir=${FEAT_EXP}/$(opts2mdl ${ubm} mc)
+	fi
+
+	local ali_opts=
+	[[ -n ${fmllr} ]] && ali_opts="--fmllr ${fmllr}"
+    alignment $ali_opts $ali_src $tr_dir
+    local ali_dir=$(alignment $ali_opts $ali_src $tr_dir)
+
+	if [[ -n ${fmllr} ]]; then
+		fmllr_tr_mc $(concat_opts gmm ${raw} mc)
+		tr_dir=${FMLLR_TR_MC}
+	fi
+
+	# we need to copy  finial.ubm and tree to the plda model dir
+	[[ ! -d ${mdl_dir} ]] && mkdir -p ${mdl_dir} 
+	for f in final.ubm splice_opts cmvn_opts; do
+		cp $ubm_dir/${f} ${mdl_dir}/
+	done
+	cp $ali_src/tree ${mdl_dir}/
+
+	steps/train_plda.sh ${tr_opts} \
+		2400 20000  \
+		$tr_dir ${DATA}/lang ${ali_dir} ${mdl_dir} \
+		|| return 1
+
+    mkgraph  ${mdl_dir}
+}
+
 
 function sat() {
     cond=
@@ -115,63 +248,91 @@ function sat() {
 function lda() {
     cond=
     ali=gmm
+	opts=
     . utils/parse_options.sh
+	local option=()
+	if [[ ${opts/fmllr/} != ${opts} ]];then
+		option+=("fmllr")
+		local fmllr="fmllr"
+	fi
 
-    mdl_dir=${FEAT_EXP}/$(opts2mdl ${ali} lda)
-    ali_src=${FEAT_EXP}/${ali}
-    tr_dir=$TR_CLN
+	local mdl_dir=${FEAT_EXP}/$(mk_uniq $(concat_opts ${ali} lda ${option[@]}))
+    echo mdl_dir ${mdl_dir}
+    local ali_src=${FEAT_EXP}/${ali}
+    local tr_dir=$TR_CLN
     if [ "$cond" == "mc" ]; then
         tr_dir=$TR_MC
         mdl_dir=${mdl_dir}_mc
-        ali_src=${FEAT_EXP}/$(opts2mdl ${ali} mc)
-    fi
-    alignment ${ali_src} ${tr_dir}
-    ali_dir=$(alignment ${ali_src} ${tr_dir})
+        ali_src=${ali_src}_mc
+	fi
+	[[ -n ${fmllr} ]] && ali_opts="--fmllr ${fmllr}"
 
-    steps/train_lda_mllt.sh \
-        --splice-opts "--left-context=$context_size --right-context=$context_size" \
+    alignment $ali_opts $ali_src $tr_dir
+    local ali_dir=$(alignment $ali_opts $ali_src $tr_dir)
+
+	if [[ -n ${fmllr} ]] ;then
+		fmllr_tr_mc $(basename ${ali_src})
+		tr_dir=${FMLLR_TR_MC}
+	fi
+
+    [[ ${context_size} != 0 ]] && splice_opts="--left-context=$context_size --right-context=$context_size"
+    
+	steps/train_lda_mllt.sh \
+        --splice-opts "${splice_opts}" \
         2500 15000 $tr_dir ${DATA}/lang ${ali_dir} ${mdl_dir} || exit 1;
-    mkgraph  ${mdl_dir}
+	mkgraph  ${mdl_dir}
 }
 
 function nnet2() {
     cond=
     ali=gmm
-	fmllr=
+	opts=
     . utils/parse_options.sh
-	local opts=
-	[[ -n ${fmllr} ]] && opts="${fmllr}"
 
-	local mdl_dir=${FEAT_EXP}/$(concat_opts $(ali2mdl nnet2 ${ali}) ${opts})
+	option=()
+	if [[ ${opts/fmllr/} != ${opts} || ${ali/fmllr/} != ${ali} ]];then
+		option+=("fmllr")
+		fmllr="fmllr"
+	fi
+	if [[ ${opts/raw/} != ${opts} || ${ali/raw/} != ${ali} ]];then
+		option+=("raw")
+		raw="raw"
+	fi
+
+	
+	local mdl_dir=${FEAT_EXP}/$(mk_uniq $(concat_opts $(ali2mdl nnet2 ${ali}) ${option[@]}))
 	local ali_src=${FEAT_EXP}/${ali}
 	local tr_dir=$TR_CLN
     if [ "$cond" == "mc" ]; then
         tr_dir=$TR_MC
         mdl_dir=${mdl_dir}_mc
-        ali_src=${FEAT_EXP}/$(opts2mdl ${ali} mc)
+        ali_src=${FEAT_EXP}/${ali}_mc
     fi
+    
 	local ali_opts=
 	[[ -n ${fmllr} ]] && ali_opts="--fmllr ${fmllr}"
     alignment $ali_opts $ali_src $tr_dir
     ali_dir=$(alignment $ali_opts $ali_src $tr_dir)
 
 	if [[ -n ${fmllr} ]]; then
-		fmllr_tr_mc $(basename $ali_src)
+		fmllr_tr_mc $(concat_opts gmm ${raw} mc)
 		tr_dir=${FMLLR_TR_MC}
 	fi
     dnn_extra_opts="--num_epochs 20 --num-epochs-extra 10 --add-layers-period 1 --shrink-interval 3"
+	# --num-threads 1 \
     steps/nnet2/train_tanh.sh --mix-up 5000 --initial-learning-rate 0.015 \
-        --final-learning-rate 0.002 --num-hidden-layers 2  \
+		--final-learning-rate 0.002 --num-hidden-layers 2  \
         --num-jobs-nnet "$nj_train" "${dnn_train_extra_opts[@]}" \
         ${tr_dir} ${DATA}/lang ${ali_dir} ${mdl_dir}
     mkgraph ${mdl_dir}
-    # alignment $(basename ${mdl})
+
 }
 
 function bottleneck_dnn() {
     cond=
     ali=gmm
     stage=-100
+	minibatch=512
 	tag=
     . utils/parse_options.sh
     mdl_dir=${BNF_MDL_EXP}/${ali}
@@ -187,19 +348,17 @@ function bottleneck_dnn() {
     ali_dir=$(alignment ${ali_src} ${tr_dir})
 	
     [[ ! -e $BNF_MDL_EXP ]] && mkdir -p ${BNF_MDL_EXP}
-	
-	[[ -n $tag ]] && mdl="${mdl}.${tag}"
-	steps/nnet2/train_tanh_bottleneck.sh \
+	[[ -n $tag ]] && mdl_dir="${mdl_dir}.${tag}"
+	echo steps/nnet2/train_tanh_bottleneck.sh \
         --stage $stage --num-jobs-nnet 4 \
 		--num-threads 1 \
 		--mix-up 5000 --max-change 40 \
-        --minibatch-size 512 \
+        --minibatch-size ${minibatch} \
         --initial-learning-rate 0.005 \
         --final-learning-rate 0.0005 \
         --num-hidden-layers 5 \
         --bottleneck-dim 42 --hidden-layer-dim 1024 \
         ${tr_dir} ${DATA}/lang $ali_dir ${mdl_dir} || exit 1
-    
 }
 
 function train () {
@@ -207,29 +366,44 @@ function train () {
         [mono]="mono" \
         [tri1]="tri1_phone" \
         [tri1_mc]="tri1_phone --cond mc" \
-        [gmm]="gmm" \
         [gmm_mc]="gmm --cond mc" \
-        [gmm_sat]="sat --ali gmm " \
+		[gmm_raw_mc]="gmm --cond mc --feat raw" \
         [gmm_sat_mc]="sat --ali gmm --cond mc " \
-		[gmm_raw_sat_mc]="sat --ali gmm --cond mc --fmllr raw" \
-        [gmm_lda]="lda --ali gmm" \
         [gmm_lda_mc]="lda --cond mc --ali gmm" \
-        [gmm_lda_sat]="sat --ali gmm_lda --fmllr fmllr" \
-        [gmm_lda_sat_mc]="sat --ali gmm_lda --cond mc --fmllr fmllr " \
-		[gmm_lda_raw_sat_mc]="sat --ali gmm_lda --cond mc --fmllr raw" \
-        [nnet2]="nnet2 --ali gmm" \
+        [gmm_lda_raw_mc]="lda --cond mc --ali gmm_raw" \
+		[gmm_fmllr_lda_raw_mc]="lda --cond mc --ali gmm_raw --opts fmllr " \
+		[gmm_fmllr_lda_mc]="lda --ali gmm --cond mc --opts fmllr" \
+		[gmm_splice_mc]="gmm_splice --ali gmm --cond mc" \
+		[ubm_splice_mc]="ubm --ali gmm_splice --cond mc" \
+		[plda_splice_mc]="plda --ali gmm --ubm ubm_splice --cond mc" \
+		[ubm_mc]="ubm --ali gmm --cond mc" \
+		[plda_mc]="plda --ali gmm --ubm ubm --cond mc" \
+		[ubm_raw_mc]="ubm --ali gmm_raw --cond mc " \
+		[plda_raw_mc]="plda --ali gmm_raw --ubm ubm_raw --cond mc"  \
+		[ubm_lda_mc]="ubm --ali gmm_lda --cond mc" \
+        [plda_lda_mc]="plda --ali gmm_lda --ubm ubm_lda --cond mc" \
+		[ubm_lda_raw_mc]="ubm --ali gmm_lda_raw --cond mc" \
+        [plda_lda_raw_mc]="plda --ali gmm_lda_raw --ubm ubm_lda_raw --cond mc" \
+		[ubm_fmllr_raw_mc]="ubm --ali gmm_raw --cond mc --opts fmllr" \
+        [plda_fmllr_raw_mc]="plda --ali gmm_raw --ubm ubm_raw --opts fmllr --cond mc" \
+		[ubm_fmllr_lda_raw_mc]="ubm --ali gmm_lda_raw --cond mc --opts fmllr" \
+        [plda_fmllr_lda_raw_mc]="plda --ali gmm_lda_raw --ubm ubm_lda_raw --opts fmllr --cond mc" \
+		[ubm_fmllr_mc]="ubm --ali gmm --cond mc --opts fmllr" \
+        [plda_fmllr_mc]="plda --ali gmm --ubm ubm --opts fmllr --cond mc" \
+		[ubm_fmllr_lda_mc]="ubm --ali gmm_lda --cond mc --opts fmllr" \
+        [plda_fmllr_lda_mc]="plda --ali gmm_lda --ubm ubm_lda --opts fmllr --cond mc" \
         [nnet2_mc]="nnet2 --ali gmm --cond mc" \
-		[nnet2_fmllr_mc]="nnet2 --ali gmm --cond mc --fmllr fmllr" \
-        [nnet2_lda]="nnet2 --ali gmm_lda" \
+		[nnet2_raw_mc]="nnet2 --ali gmm_raw --cond mc" \
+		[nnet2_fmllr_mc]="nnet2 --ali gmm --cond mc --opts fmllr" \
+		[nnet2_fmllr_raw_mc]="nnet2 --ali gmm_raw --cond mc --opts fmllr" \
         [nnet2_lda_mc]="nnet2 --ali gmm_lda --cond mc" \
-		[nnet2_lda_mc]="nnet2 --ali gmm_lda --cond mc --fmllr raw" \
-        [nnet2_sat_mc]="nnet2 --ali gmm_sat --cond mc" \
-        [nnet2_lda_sat_mc]="nnet2 --ali gmm_lda_sat --cond mc" \
-        [nnet2_lda_raw_sat_mc]="nnet2 --ali gmm_lda_raw_sat --cond mc --fmllr raw" \
-        [bnf]="bottleneck_dnn --ali tri1" \
+		[nnet2_lda_raw_mc]="nnet2 --ali gmm_lda_raw --cond mc" \
+		[nnet2_fmllr_lda_mc]="nnet2 --ali gmm_fmllr_lda --cond mc " \
+		[nnet2_fmllr_lda_raw_mc]="nnet2 --ali gmm_fmllr_lda_raw --cond mc " \
         [bnf_mc]="bottleneck_dnn --ali tri1 --cond mc" \
-		[bnf_mc.gpu_512]="bottleneck_dnn --ali tri1 --cond mc --tag gpu_512" \
-        )
+		[bnf_mc.gpu_256]="bottleneck_dnn --ali tri1 --cond mc --minibatch 256 --tag gpu_256" \
+
+    )
     
     ORDER=($*)
     echo Training list : ${ORDER[*]}
