@@ -90,8 +90,8 @@ case $feat_type in
   raw) feats="ark,s,cs:utils/subset_scp.pl --quiet $N $sdata/JOB/feats.scp | apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:- ark:- |"
    ;;
   lda) 
-    splice_opts=`cat $alidir/splice_opts 2>/dev/null`
-    cp $alidir/splice_opts $dir 2>/dev/null
+    splice_opts=`cat $alidir/lda_splice_opts 2>/dev/null`
+    cp $alidir/lda_splice_opts $dir 2>/dev/null
     cp $alidir/final.mat $dir    
       feats="ark,s,cs:utils/subset_scp.pl --quiet $N $sdata/JOB/feats.scp | apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:- ark:- | splice-feats $splice_opts ark:- ark:- | transform-feats $dir/final.mat ark:- ark:- |"
     ;;

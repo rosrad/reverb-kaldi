@@ -62,16 +62,14 @@ cp $srcdir/splice_opts $dir 2>/dev/null # frame-splicing options.
 cmvn_opts=`cat $srcdir/cmvn_opts 2>/dev/null`
 cp $srcdir/cmvn_opts $dir 2>/dev/null # cmn/cmvn option.
 
-if [ -f $srcdir/final.mat ]; then feat_type=lda; else feat_type=delta; fi
+# for tracking the feat-type
+# call it like a function , because bash can not return string ,we do like this
+src_dir=$srcdir
+dest_dir=$dir
+. steps/feat_track.sh
+sifeats=$org_feats
 echo "$0: feature type is $feat_type"
 
-case $feat_type in
-    delta) sifeats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | add-deltas ark:- ark:- |";;
-    lda) sifeats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | splice-feats $splice_opts ark:- ark:- | transform-feats $srcdir/final.mat ark:- ark:- |"
-        cp $srcdir/final.mat $srcdir/full.mat $dir    
-        ;;
-    *) echo "Invalid feature type $feat_type" && exit 1;
-esac
 
 ## Set up model and alignment model.
 mdl=$srcdir/final.mdl

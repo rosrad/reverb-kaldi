@@ -7,31 +7,29 @@
 transform_dir=
 iter=
 model= # You can specify the model to use (e.g. if you want to use the .alimdl)
-stage=0
 nj=4
 cmd=run.pl
 max_active=7000
 beam=13.0
-lattice_beam=6.0
+latbeam=6.0
 acwt=0.083333 # note: only really affects pruning (scoring is on lattices).
-num_threads=1 # if >1, will use gmm-latgen-faster-parallel
-parallel_opts=  # If you supply num-threads, you should supply this too.
-scoring_opts=
-# note: there are no more min-lmwt and max-lmwt options, instead use
-# e.g. --scoring-opts "--min-lmwt 1 --max-lmwt 20"
-skip_scoring=false
+min_lmwt=6
+max_lmwt=20
+stage=-2
 feat_type=
+#splice_opts2="--left-context=1 --right-context=1"
 # End configuration section.
 
 echo "$0 $@"  # Print the command line for logging
 
-. check.sh
+[ -f ./path.sh ] && . ./path.sh; # source the path.
 . parse_options.sh || exit 1;
+
 if [ $# != 3 ]; then
-	echo "Usage: steps/decode.sh [options] <graph-dir> <data-dir> <decode-dir>"
+	echo "Usage: steps/decode_fagmm.sh [options] <graph-dir> <data-dir> <decode-dir>"
 	echo "... where <decode-dir> is assumed to be a sub-directory of the directory"
 	echo " where the model is."
-	echo "e.g.: steps/decode.sh exp/mono/graph_tgpr data/test_dev93 exp/mono/decode_dev93_tgpr"
+	echo "e.g.: steps/decode.sh_fagmm exp/mono/graph_tgpr data/test_dev93 ubm  exp/mono/decode_dev93_tgpr"
 	echo ""
 	echo "This script works on CMN + (delta+delta-delta | LDA+MLLT) features; it works out"
 	echo "what type of features you used (assuming it's one of these two)"
@@ -45,9 +43,10 @@ if [ $# != 3 ]; then
 	echo "  --cmd (utils/run.pl|utils/queue.pl <queue opts>) # how to run jobs."
 	echo "  --transform-dir <trans-dir>                      # dir to find fMLLR transforms "
 	echo "  --acwt <float>                                   # acoustic scale used for lattice generation "
-	echo "  --scoring-opts <string>                          # options to local/score.sh"
-	echo "  --num-threads <n>                                # number of threads to use, default 1."
-	echo "  --parallel-opts <opts>                           # e.g. '-pe smp 4' if you supply --num-threads 4"
+	echo "  --min-lmwt <int>                                 # minumum LM-weight for lattice rescoring "
+	echo "  --max-lmwt <int>                                 # maximum LM-weight for lattice rescoring "
+	echo "                                                   # speaker-adapted decoding"
+	echo "  --stage <stage>                                  # stage to do partial re-run from."
 	exit 1;
 fi
 
@@ -71,40 +70,40 @@ for f in $sdata/1/feats.scp $sdata/1/cmvn.scp $model $graphdir/HCLG.fst; do
 	[ ! -f $f ] && echo "decode.sh: no such file $f" && exit 1;
 done
 
-
-
-splice_opts=`cat $srcdir/splice_opts 2>/dev/null` # frame-splicing options.
-cmvn_opts=`cat $srcdir/cmvn_opts 2>/dev/null`
-
-thread_string=
-[ $num_threads -gt 1 ] && thread_string="-parallel --num-threads=$num_threads" 
+splice_opts=$(cat $srcdir/splice_opts 2>/dev/null)
+cmvn_opts=$(cat $srcdir/cmvn_opts 2>/dev/null)
 
 # for tracking the feat-type
 src_dir=$srcdir
 dest_dir=$dir
 . steps/feat_track.sh
 feats=$org_feats
-echo "$0: feature type is $feat_type"
 
-if [ ! -z "$transform_dir" ]; then # add transforms to features...
-	echo "Using fMLLR transforms from $transform_dir"
-	[ ! -f $transform_dir/trans.1 ] && echo "Expected $transform_dir/trans.1 to exist."
-	[ "`cat $transform_dir/num_jobs`" -ne $nj ] && \
-		echo "Mismatch in number of jobs with $transform_dir";
-	feats="$feats transform-feats --utt2spk=ark:$sdata/JOB/utt2spk ark:$transform_dir/trans.JOB ark:- ark:- |"
+feats_one="$(echo "$feats" | sed s:JOB:1:g)"
+feat_dim=$(feat-to-dim "$feats_one" -) || exit 1;
+
+echo "feat dimension: ${feat_dim}"
+
+if [ $stage -le -1 ]; then
+	echo "$0: doing Gaussian selection"
+	fa-gmm-to-fgmm $srcdir/final.fagmm $srcdir/final.ubm > $dir/log/ubm.log 2>&1
+
+	$cmd JOB=1:$nj $dir/log/gselect1.JOB.log \
+		gmm-gselect --n=50 "fgmm-global-to-gmm $srcdir/final.ubm - |" "$feats" \
+		"ark:|gzip -c >$dir/gselect1.JOB.gz" || exit 1;
+
+	$cmd JOB=1:$nj $dir/log/gselect2.JOB.log \
+		fgmm-gselect --gselect="ark,s,cs:gunzip -c $dir/gselect1.JOB.gz|" --n=15 $srcdir/final.ubm \
+        "$feats" "ark:|gzip -c >$dir/gselect.JOB.gz" || exit 1;
 fi
 
-if [ $stage -le 0 ]; then
-	$cmd $parallel_opts JOB=1:$nj $dir/log/decode.JOB.log \
-		gmm-latgen-faster$thread_string --max-active=$max_active --beam=$beam --lattice-beam=$lattice_beam \
-		--acoustic-scale=$acwt --allow-partial=true --word-symbol-table=$graphdir/words.txt \
-		$model $graphdir/HCLG.fst "$feats" "ark:|gzip -c > $dir/lat.JOB.gz" || exit 1;
-fi
+$cmd JOB=1:$nj $dir/log/decode.JOB.log \
+	plda-latgen-faster --max-active=$max_active --beam=$beam --lattice-beam=$latbeam \
+	--acoustic-scale=$acwt --allow-partial=true --word-symbol-table=$graphdir/words.txt \
+	$model $graphdir/HCLG.fst "$feats" "ark,s,cs:gunzip -c $dir/gselect.JOB.gz|" "ark:|gzip -c > $dir/lat.JOB.gz" || exit 1; # "ark,s,cs:gunzip -c $dir/gselect.JOB.gz|"
 
-if ! $skip_scoring ; then
-	[ ! -x local/score.sh ] && \
-		echo "Not scoring because local/score.sh does not exist or not executable." && exit 1;
-	local/score.sh --cmd "$cmd" $scoring_opts $data $graphdir $dir
-fi
+[ ! -x local/score.sh ] && \
+	echo "Not scoring because local/score.sh does not exist or not executable." && exit 1;
+local/score.sh --cmd "$cmd" --min_lmwt $min_lmwt --max_lmwt $max_lmwt $data $graphdir $dir
 
 exit 0;

@@ -19,6 +19,7 @@ scale_opts="--transition-scale=1.0 --acoustic-scale=0.1 --self-loop-scale=0.1"
 beam=10
 retry_beam=40
 boost_silence=1.0 # Factor by which to boost silence during alignment.
+feat_type=
 # End configuration options.
 
 echo "$0 $@"  # Print the command line for logging
@@ -56,17 +57,13 @@ cp $srcdir/cmvn_opts $dir 2>/dev/null # cmn/cmvn option.
 cp $srcdir/{tree,final.mdl} $dir || exit 1;
 cp $srcdir/final.occs $dir;
 
-
-if [ -f $srcdir/final.mat ]; then feat_type=lda; else feat_type=delta; fi
+# for tracking the feat-type
+# call it like a function , because bash can not return string ,we do like this
+src_dir=$srcdir
+dest_dir=$dir
+. steps/feat_track.sh
+feats=$org_feats
 echo "$0: feature type is $feat_type"
-
-case $feat_type in
-    delta) feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | add-deltas ark:- ark:- |";;
-    lda) feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | splice-feats $splice_opts ark:- ark:- | transform-feats $srcdir/final.mat ark:- ark:- |"
-        cp $srcdir/final.mat $srcdir/full.mat $dir    
-        ;;
-    *) echo "$0: invalid feature type $feat_type" && exit 1;
-esac
 
 echo "$0: aligning data in $data using model from $srcdir, putting alignments in $dir"
 

@@ -62,12 +62,22 @@ export TR_CLN=${FEAT_DATA}/si_tr
 export TR_MC=${FEAT_DATA}/REVERB_tr_cut/SimData_tr_for_1ch_A
 
 # data for FMLLR dataset
-export FMLLR_TARGET="FMLLR_dt"
-# export FMLLR_GMM="gmm_mc"
+FMLLR_TARGET="FMLLR_dt"
+FMLLR_PREFIX="Fmllr"
+export FMLLR_TARGET
+export FMLLR_PREFIX
+
+# export FMLLR_TARGET="FMLLR_dt"
+
 
 function fmllr_tr_mc(){
-	fmllr_gmm=${1:-"gmm_mc"}
-	export FMLLR_TR_MC=${FEAT_DATA}/${FMLLR_TARGET}/Fmllr_${fmllr_gmm}_SimData_tr_for_1ch_A
+	fmllr_gmm=${1}
+	if [[ -z $fmllr_gmm ]];then
+		fmllr_gmm="gmm_mc"
+		[[ -n ${FMLLR_TYPE} ]] && fmllr_gmm="gmm_raw_mc"
+	fi
+	export FMLLR_TR_MC=${FEAT_DATA}/${FMLLR_TARGET}/${FMLLR_PREFIX}_${fmllr_gmm}_SimData_tr_for_1ch_A
+	export DEFAULT_FMLLR_GMM=${fmllr_gmm}
 }
 
 fmllr_tr_mc 
