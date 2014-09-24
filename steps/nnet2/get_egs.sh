@@ -102,34 +102,38 @@ cmvn_opts=`cat $alidir/cmvn_opts 2>/dev/null`
 cp $alidir/cmvn_opts $dir 2>/dev/null
 
 ## Set up features. 
-if [ -z $feat_type ]; then
-	if [ -f $alidir/final.mat ] && [ ! -f $transform_dir/raw_trans.1 ]; then feat_type=lda; else feat_type=raw; fi
-fi
+src_dir=$alidir
+dest_dir=$dir
+. steps/feat_track.sh
 echo "$0: feature type is $feat_type"
+feats=$(echo $org_feats | sed 's#ark,s,cs:#ark,s,cs:utils/filter_scp.pl --exclude '$dir'/valid_uttlist '$sdata'/JOB/feats.scp | #g' \
+    | sed 's#scp:'$sdata'/JOB/feats.scp#scp:-#')
+valid_feats=$(echo ${feats}|sed 's#--exclude ##g'|sed 's#'$sdata'/JOB#'$data'#g')
+train_subset_feats=$(echo ${valid_feats}|sed 's#valid_uttlist#train_subset_uttlist#g')
 
-case $feat_type in
-	raw) feats="ark,s,cs:utils/filter_scp.pl --exclude $dir/valid_uttlist $sdata/JOB/feats.scp | apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:- ark:- |"
-		valid_feats="ark,s,cs:utils/filter_scp.pl $dir/valid_uttlist $data/feats.scp | apply-cmvn $cmvn_opts --utt2spk=ark:$data/utt2spk scp:$data/cmvn.scp scp:- ark:- |"
-		train_subset_feats="ark,s,cs:utils/filter_scp.pl $dir/train_subset_uttlist $data/feats.scp | apply-cmvn $cmvn_opts --utt2spk=ark:$data/utt2spk scp:$data/cmvn.scp scp:- ark:- |"
-		;;
-	lda) 
-		splice_opts=`cat $alidir/splice_opts 2>/dev/null`
-		cp $alidir/splice_opts $dir 2>/dev/null
-		cp $alidir/final.mat $dir    
-		feats="ark,s,cs:utils/filter_scp.pl --exclude $dir/valid_uttlist $sdata/JOB/feats.scp | apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:- ark:- | splice-feats $splice_opts ark:- ark:- | transform-feats $dir/final.mat ark:- ark:- |"
-		valid_feats="ark,s,cs:utils/filter_scp.pl $dir/valid_uttlist $data/feats.scp | apply-cmvn $cmvn_opts --utt2spk=ark:$data/utt2spk scp:$data/cmvn.scp scp:- ark:- | splice-feats $splice_opts ark:- ark:- | transform-feats $dir/final.mat ark:- ark:- |"
-		train_subset_feats="ark,s,cs:utils/filter_scp.pl $dir/train_subset_uttlist $data/feats.scp | apply-cmvn $cmvn_opts --utt2spk=ark:$data/utt2spk scp:$data/cmvn.scp scp:- ark:- | splice-feats $splice_opts ark:- ark:- | transform-feats $dir/final.mat ark:- ark:- |"
-		;;
-	*) echo "$0: invalid feature type $feat_type" && exit 1;
-esac
+# case $feat_type in
+# 	raw) feats="ark,s,cs:utils/filter_scp.pl --exclude $dir/valid_uttlist $sdata/JOB/feats.scp | apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:- ark:- |"
+# 		valid_feats="ark,s,cs:utils/filter_scp.pl $dir/valid_uttlist $data/feats.scp | apply-cmvn $cmvn_opts --utt2spk=ark:$data/utt2spk scp:$data/cmvn.scp scp:- ark:- |"
+# 		train_subset_feats="ark,s,cs:utils/filter_scp.pl $dir/train_subset_uttlist $data/feats.scp | apply-cmvn $cmvn_opts --utt2spk=ark:$data/utt2spk scp:$data/cmvn.scp scp:- ark:- |"
+# 		;;
+# 	lda) 
+# 		splice_opts=`cat $alidir/splice_opts 2>/dev/null`
+# 		cp $alidir/splice_opts $dir 2>/dev/null
+# 		cp $alidir/final.mat $dir    
+# 		feats="ark,s,cs:utils/filter_scp.pl --exclude $dir/valid_uttlist $sdata/JOB/feats.scp | apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:- ark:- | splice-feats $splice_opts ark:- ark:- | transform-feats $dir/final.mat ark:- ark:- |"
+# 		valid_feats="ark,s,cs:utils/filter_scp.pl $dir/valid_uttlist $data/feats.scp | apply-cmvn $cmvn_opts --utt2spk=ark:$data/utt2spk scp:$data/cmvn.scp scp:- ark:- | splice-feats $splice_opts ark:- ark:- | transform-feats $dir/final.mat ark:- ark:- |"
+# 		train_subset_feats="ark,s,cs:utils/filter_scp.pl $dir/train_subset_uttlist $data/feats.scp | apply-cmvn $cmvn_opts --utt2spk=ark:$data/utt2spk scp:$data/cmvn.scp scp:- ark:- | splice-feats $splice_opts ark:- ark:- | transform-feats $dir/final.mat ark:- ark:- |"
+# 		;;
+# 	*) echo "$0: invalid feature type $feat_type" && exit 1;
+# esac
 
-if [ -f $transform_dir/trans.1 ] && [ $feat_type != "raw" ]; then
+if [ -f $transform_dir/trans.1 ] && [ ${feat_type/lda/} != ${feat_type} ]; then
 	echo "$0: using transforms from $transform_dir"
 	feats="$feats transform-feats --utt2spk=ark:$sdata/JOB/utt2spk ark:$transform_dir/trans.JOB ark:- ark:- |"
 	valid_feats="$valid_feats transform-feats --utt2spk=ark:$data/utt2spk 'ark:cat $transform_dir/trans.*|' ark:- ark:- |"
 	train_subset_feats="$train_subset_feats transform-feats --utt2spk=ark:$data/utt2spk 'ark:cat $transform_dir/trans.*|' ark:- ark:- |"
 fi
-if [ -f $transform_dir/raw_trans.1 ] && [ $feat_type == "raw" ]; then
+if [ -f $transform_dir/raw_trans.1 ] && [ ${feat_type/lda/} != ${feat_type} ]; then
 	echo "$0: using raw-fMLLR transforms from $transform_dir"
 	feats="$feats transform-feats --utt2spk=ark:$sdata/JOB/utt2spk ark:$transform_dir/raw_trans.JOB ark:- ark:- |"
 	valid_feats="$valid_feats transform-feats --utt2spk=ark:$data/utt2spk 'ark:cat $transform_dir/raw_trans.*|' ark:- ark:- |"

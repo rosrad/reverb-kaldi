@@ -186,12 +186,12 @@ function plda() {
 	local mdl_dir=${FEAT_EXP}/$(mk_uniq $(concat_opts $(ali2mdl plda ${ali}) ${option[@]}))
     local ali_src=${FEAT_EXP}/${ali}
     local tr_dir=$TR_CLN
-	local ubm_dir=${FEAT_EXP}/${ubm}
+	local ubm_dir=${FEAT_EXP}/$(mk_uniq $(concat_opts ${ubm} ${option[@]}))
     if [ "$cond" == "mc" ]; then
         tr_dir=$TR_MC
         mdl_dir=${mdl_dir}_mc
-        ali_src=${FEAT_EXP}/$(opts2mdl ${ali} mc)
-		ubm_dir=${FEAT_EXP}/$(opts2mdl ${ubm} mc)
+        ali_src=${ali_src}_mc
+		ubm_dir=${ubm_dir}_mc
 	fi
 
 	local ali_opts=

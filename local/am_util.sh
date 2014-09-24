@@ -13,9 +13,8 @@ function clean_opts() {
     echo $1|sed 's#_*$##'|sed 's#^_*##'
 }
 function mk_uniq() {
-
 	local mdl=$(echo $@ | cut -d'_' -f1)
-	local uniq_opts=$(echo $@| cut -d'_' -f2- |tr -s '_' \\n |sort|uniq)
+	local uniq_opts=$(echo $@|awk -F'_' '{for (i=2;i<=NF;i++) print $i; }'|sort|uniq)
 	printf "${mdl}\n${uniq_opts}" | tr -s \\n '_' \
 		|sed 's#_*$##'|sed 's#^_*##'
 }
