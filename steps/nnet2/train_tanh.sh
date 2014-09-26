@@ -145,8 +145,6 @@ sdata=$data/split$nj
 utils/split_data.sh $data $nj
 
 mkdir -p $dir/log
-splice_opts=`cat $alidir/splice_opts 2>/dev/null`
-cp $alidir/splice_opts $dir 2>/dev/null
 cp $alidir/cmvn_opts $dir 2>/dev/null
 cp $alidir/tree $dir
 

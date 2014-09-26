@@ -92,9 +92,8 @@ if [ $stage -le -5 ]; then
 		gmm-gselect --n=$num_gselect1 $dir/final.ubm  "$feats" \
 		"ark:|gzip -c >$dir/gselect1.JOB.gz" || exit 1;
 
-	[[  ${feat_dim} < 40 ]] && fa_gmm_opts="--speech-dim=${feat_dim} --state-dim=${feat_dim}"
-
-	fa-gmm-init --binary=true  --use-full-gmm=false ${fa_gmm_opts} $dir/final.ubm $dir/final.fagmm >$dir/log/init.log 2>&1
+	[[ ${feat_dim} -lt 40 ]] && fa_gmm_opts="--speech-dim=${feat_dim} --state-dim=${feat_dim}"
+    fa-gmm-init --binary=true  --use-full-gmm=false ${fa_gmm_opts} $dir/final.ubm $dir/final.fagmm >$dir/log/init.log 2>&1
 fi
 
 if [ $stage -le -4 ]; then

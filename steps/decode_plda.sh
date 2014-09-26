@@ -17,7 +17,6 @@ min_lmwt=6
 max_lmwt=20
 stage=-2
 feat_type=
-#splice_opts2="--left-context=1 --right-context=1"
 # End configuration section.
 
 echo "$0 $@"  # Print the command line for logging
@@ -70,7 +69,6 @@ for f in $sdata/1/feats.scp $sdata/1/cmvn.scp $model $graphdir/HCLG.fst; do
 	[ ! -f $f ] && echo "decode.sh: no such file $f" && exit 1;
 done
 
-splice_opts=$(cat $srcdir/splice_opts 2>/dev/null)
 cmvn_opts=$(cat $srcdir/cmvn_opts 2>/dev/null)
 
 # for tracking the feat-type

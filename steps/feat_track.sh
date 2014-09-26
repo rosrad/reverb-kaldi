@@ -14,8 +14,6 @@ if [[ -z $splice_opts && -f $src_dir/splice_opts ]] ; then
 	splice_opts=$(cat $src_dir/splice_opts 2>/dev/null)
 	cp $src_dir/splice_opts $dest_dir/
 fi
-echo ${splice_opts}
-
 case $feat_type in
 	raw) org_feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- |"
 		[[ -n $splice_opts ]] && org_feats=${org_feats}"splice-feats $splice_opts ark:- ark:- |"
@@ -29,7 +27,7 @@ case $feat_type in
 		cp $src_dir/final.mat $src_dir/full.mat $dest_dir    
 		;;
 	delta-lda)
-		org_feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | ${lda_splice} transform-feats $src_dir/final.mat ark:- ark:- |"
+		org_feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | add-deltas ark:- ark:- | ${lda_splice} transform-feats $src_dir/final.mat ark:- ark:- |"
 		[[ -n $splice_opts ]] && org_feats=${org_feats}"splice-feats $splice_opts ark:- ark:- |"
 		cp $src_dir/final.mat $src_dir/full.mat $dest_dir    
 		;;

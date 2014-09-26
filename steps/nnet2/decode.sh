@@ -60,7 +60,6 @@ for f in $graphdir/HCLG.fst $data/feats.scp $model; do
 done
 
 sdata=$data/split$nj;
-splice_opts=`cat $srcdir/splice_opts 2>/dev/null`
 cmvn_opts=`cat $srcdir/cmvn_opts 2>/dev/null`
 thread_string=
 [ $num_threads -gt 1 ] && thread_string="-parallel --num-threads=$num_threads" 
@@ -71,18 +70,21 @@ echo $nj > $dir/num_jobs
 
 
 ## Set up features.
-if [ -z "$feat_type" ]; then
-  if [ -f $srcdir/final.mat ]; then feat_type=lda; else feat_type=raw; fi
-  echo "$0: feature type is $feat_type"
-fi
+# for tracking the feat-type
+src_dir=$srcdir
+dest_dir=$dir
+. steps/feat_track.sh
+feats=$org_feats
+echo "$0: feature type is $feat_type"
 
 
-case $feat_type in
-  raw) feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- |";;
-  lda) feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | splice-feats $splice_opts ark:- ark:- | transform-feats $srcdir/final.mat ark:- ark:- |"
-    ;;
-  *) echo "$0: invalid feature type $feat_type" && exit 1;
-esac
+# case $feat_type in
+#   raw) feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- |";;
+#   lda) feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | splice-feats $splice_opts ark:- ark:- | transform-feats $srcdir/final.mat ark:- ark:- |"
+#     ;;
+#   *) echo "$0: invalid feature type $feat_type" && exit 1;
+# esac
+
 if [ ! -z "$transform_dir" ]; then
   echo "$0: using transforms from $transform_dir"
   if [ "$feat_type" == "lda" ]; then
