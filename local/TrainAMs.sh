@@ -148,17 +148,15 @@ function ubm() {
         mdl_dir=${mdl_dir}_mc
         ali_src=${FEAT_EXP}/$(opts2mdl ${ali} mc)
 	fi
-    
-	local ali_opts=
-	[[ -n ${fmllr} ]] && ali_opts="--fmllr ${fmllr}"
-    alignment $ali_opts $ali_src $tr_dir
-    local ali_dir=$(alignment $ali_opts $ali_src $tr_dir)
 
 	if [[ -n ${fmllr} ]]; then
 		fmllr_tr_mc $(concat_opts gmm ${raw} mc)
 		tr_dir=${FMLLR_TR_MC}
 	fi
 
+    alignment $ali_opts $ali_src $tr_dir
+    local ali_dir=$(alignment $ali_opts $ali_src $tr_dir)
+    
 	steps/train_ubm_splice.sh  ${tr_opts}\
 		100 \
 		$tr_dir ${DATA}/lang ${ali_dir} ${mdl_dir} \
@@ -194,15 +192,13 @@ function plda() {
 		ubm_dir=${ubm_dir}_mc
 	fi
 
-	local ali_opts=
-	[[ -n ${fmllr} ]] && ali_opts="--fmllr ${fmllr}"
-    alignment $ali_opts $ali_src $tr_dir
-    local ali_dir=$(alignment $ali_opts $ali_src $tr_dir)
-
 	if [[ -n ${fmllr} ]]; then
 		fmllr_tr_mc $(concat_opts gmm ${raw} mc)
 		tr_dir=${FMLLR_TR_MC}
 	fi
+
+    alignment $ali_opts $ali_src $tr_dir
+    local ali_dir=$(alignment $ali_opts $ali_src $tr_dir)
 
 	# we need to copy  finial.ubm and tree to the plda model dir
 	[[ ! -d ${mdl_dir} ]] && mkdir -p ${mdl_dir} 
@@ -265,15 +261,15 @@ function lda() {
         mdl_dir=${mdl_dir}_mc
         ali_src=${ali_src}_mc
 	fi
-	[[ -n ${fmllr} ]] && ali_opts="--fmllr ${fmllr}"
+
+	if [[ -n ${$ali/fmllr/} ]] ;then
+		fmllr_tr_mc $(basename ${ali_src})
+		tr_dir=${FMLLR_TR_MC}
+	fi
 
     alignment $ali_opts $ali_src $tr_dir
     local ali_dir=$(alignment $ali_opts $ali_src $tr_dir)
 
-	if [[ -n ${fmllr} ]] ;then
-		fmllr_tr_mc $(basename ${ali_src})
-		tr_dir=${FMLLR_TR_MC}
-	fi
 
     [[ ${context_size} != 0 ]] && splice_opts="--left-context=$context_size --right-context=$context_size"
     
@@ -287,6 +283,7 @@ function nnet2() {
     cond=
     ali=gmm
 	opts=
+    layers=2
     . utils/parse_options.sh
 
 	option=()
@@ -298,6 +295,7 @@ function nnet2() {
 		option+=("raw")
 		raw="raw"
 	fi
+    [[ ${layers} != 2 ]]; option+=("layer${layers}")
 
 	
 	local mdl_dir=${FEAT_EXP}/$(mk_uniq $(concat_opts $(ali2mdl nnet2 ${ali}) ${option[@]}))
@@ -308,24 +306,22 @@ function nnet2() {
         mdl_dir=${mdl_dir}_mc
         ali_src=${FEAT_EXP}/${ali}_mc
     fi
-    
-	local ali_opts=
-	[[ -n ${fmllr} ]] && ali_opts="--fmllr ${fmllr}"
-    alignment $ali_opts $ali_src $tr_dir
-    ali_dir=$(alignment $ali_opts $ali_src $tr_dir)
 
 	if [[ -n ${fmllr} ]]; then
 		fmllr_tr_mc $(concat_opts gmm ${raw} mc)
 		tr_dir=${FMLLR_TR_MC}
 	fi
+    
+    alignment $ali_opts $ali_src $tr_dir
+    ali_dir=$(alignment $ali_opts $ali_src $tr_dir)
+
     dnn_extra_opts="--num_epochs 20 --num-epochs-extra 10 --add-layers-period 1 --shrink-interval 3"
 	# --num-threads 1 \
     steps/nnet2/train_tanh.sh --mix-up 5000 --initial-learning-rate 0.015 \
-		--final-learning-rate 0.002 --num-hidden-layers 2  \
+		--final-learning-rate 0.002 --num-hidden-layers ${layers}  \
         --num-jobs-nnet "$nj_train" "${dnn_train_extra_opts[@]}" \
         ${tr_dir} ${DATA}/lang ${ali_dir} ${mdl_dir}
     mkgraph ${mdl_dir}
-
 }
 
 function bottleneck_dnn() {
@@ -390,8 +386,8 @@ function train () {
         [plda_fmllr_lda_raw_mc]="plda --ali gmm_lda_raw --ubm ubm_lda_raw --opts fmllr --cond mc" \
 		[ubm_fmllr_mc]="ubm --ali gmm --cond mc --opts fmllr" \
         [plda_fmllr_mc]="plda --ali gmm --ubm ubm --opts fmllr --cond mc" \
-		[ubm_fmllr_lda_mc]="ubm --ali gmm_lda --cond mc --opts fmllr" \
-        [plda_fmllr_lda_mc]="plda --ali gmm_lda --ubm ubm_lda --opts fmllr --cond mc" \
+		[ubm_fmllr_lda_mc]="ubm --ali gmm_fmllr_lda --cond mc" \
+        [plda_fmllr_lda_mc]="plda --ali gmm_fmllr_lda --ubm ubm_fmllr_lda --cond mc" \
         [nnet2_mc]="nnet2 --ali gmm --cond mc" \
 		[nnet2_raw_mc]="nnet2 --ali gmm_raw --cond mc" \
 		[nnet2_fmllr_mc]="nnet2 --ali gmm --cond mc --opts fmllr" \
@@ -400,6 +396,14 @@ function train () {
 		[nnet2_lda_raw_mc]="nnet2 --ali gmm_lda_raw --cond mc" \
 		[nnet2_fmllr_lda_mc]="nnet2 --ali gmm_fmllr_lda --cond mc " \
 		[nnet2_fmllr_lda_raw_mc]="nnet2 --ali gmm_fmllr_lda_raw --cond mc " \
+        [nnet2_layer5_mc]="nnet2 --ali gmm --cond mc --layers 5" \
+		[nnet2_layer5_raw_mc]="nnet2 --ali gmm_raw --cond mc --layers 5" \
+		[nnet2_fmllr_layer5_mc]="nnet2 --ali gmm --cond mc --opts fmllr --layers 5" \
+		[nnet2_fmllr_layer5_raw_mc]="nnet2 --ali gmm_raw --cond mc --opts fmllr --layers 5" \
+        [nnet2_layer5_lda_mc]="nnet2 --ali gmm_lda --cond mc --layers 5" \
+		[nnet2_layer5_lda_raw_mc]="nnet2 --ali gmm_lda_raw --cond mc --layers 5" \
+		[nnet2_fmllr_layer5_lda_mc]="nnet2 --ali gmm_fmllr_lda --cond mc  --layers 5" \
+		[nnet2_fmllr_layer5_lda_raw_mc]="nnet2 --ali gmm_fmllr_lda_raw --cond mc --layers 5" \
         [bnf_mc]="bottleneck_dnn --ali tri1 --cond mc" \
 		[bnf_mc.gpu_256]="bottleneck_dnn --ali tri1 --cond mc --minibatch 256 --tag gpu_256" \
 
