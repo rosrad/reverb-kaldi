@@ -140,7 +140,6 @@ function ubm() {
 	fi
 
 	local mdl_dir=${FEAT_EXP}/$(mk_uniq $(concat_opts $(ali2mdl ubm ${ali}) ${option[@]}))
-	echo $mdl_dir
     local ali_src=${FEAT_EXP}/${ali}
     local tr_dir=$TR_CLN
     if [ "$cond" == "mc" ]; then
@@ -148,16 +147,17 @@ function ubm() {
         mdl_dir=${mdl_dir}_mc
         ali_src=${FEAT_EXP}/$(opts2mdl ${ali} mc)
 	fi
-
+    org_tr_dir=${tr_dir}
 	if [[ -n ${fmllr} ]]; then
 		fmllr_tr_mc $(concat_opts gmm ${raw} mc)
 		tr_dir=${FMLLR_TR_MC}
+        [[ ${ali_src/fmllr/} == ${ali_src} ]] && ali_opts="--fmllr fmllr"
 	fi
-
-    alignment $ali_opts $ali_src $tr_dir
-    local ali_dir=$(alignment $ali_opts $ali_src $tr_dir)
     
-	steps/train_ubm_splice.sh  ${tr_opts}\
+    alignment $ali_opts $ali_src $org_tr_dir
+    local ali_dir=$(alignment $ali_opts $ali_src $org_tr_dir)
+    
+    steps/train_ubm_splice.sh  ${tr_opts}\
 		100 \
 		$tr_dir ${DATA}/lang ${ali_dir} ${mdl_dir} \
 		|| return 1
@@ -191,15 +191,16 @@ function plda() {
         ali_src=${ali_src}_mc
 		ubm_dir=${ubm_dir}_mc
 	fi
-
+    org_tr_dir=${tr_dir}
 	if [[ -n ${fmllr} ]]; then
 		fmllr_tr_mc $(concat_opts gmm ${raw} mc)
 		tr_dir=${FMLLR_TR_MC}
+        [[ ${ali_src/fmllr/} == ${ali_src} ]] && ali_opts="--fmllr fmllr"
 	fi
 
-    alignment $ali_opts $ali_src $tr_dir
-    local ali_dir=$(alignment $ali_opts $ali_src $tr_dir)
-
+    alignment $ali_opts $ali_src $org_tr_dir
+    local ali_dir=$(alignment $ali_opts $ali_src $org_tr_dir)
+    
 	# we need to copy  finial.ubm and tree to the plda model dir
 	[[ ! -d ${mdl_dir} ]] && mkdir -p ${mdl_dir} 
 	for f in final.ubm splice_opts cmvn_opts; do
@@ -252,6 +253,11 @@ function lda() {
 		local fmllr="fmllr"
 	fi
 
+	if [[ ${opts/raw/} != ${opts} ]];then
+		option+=("raw")
+		local raw="raw"
+	fi
+
 	local mdl_dir=${FEAT_EXP}/$(mk_uniq $(concat_opts ${ali} lda ${option[@]}))
     echo mdl_dir ${mdl_dir}
     local ali_src=${FEAT_EXP}/${ali}
@@ -261,14 +267,15 @@ function lda() {
         mdl_dir=${mdl_dir}_mc
         ali_src=${ali_src}_mc
 	fi
-
+    org_tr_dir=${tr_dir}
 	if [[ -n ${$ali/fmllr/} ]] ;then
-		fmllr_tr_mc $(basename ${ali_src})
+		fmllr_tr_mc $(concat_opts gmm ${raw} mc)
 		tr_dir=${FMLLR_TR_MC}
+        [[ ${ali_src/fmllr/} == ${ali_src} ]] && ali_opts="--fmllr fmllr"
 	fi
 
-    alignment $ali_opts $ali_src $tr_dir
-    local ali_dir=$(alignment $ali_opts $ali_src $tr_dir)
+    alignment $ali_opts $ali_src $org_tr_dir
+    local ali_dir=$(alignment $ali_opts $ali_src $org_tr_dir)
 
 
     [[ ${context_size} != 0 ]] && splice_opts="--left-context=$context_size --right-context=$context_size"
@@ -306,14 +313,15 @@ function nnet2() {
         mdl_dir=${mdl_dir}_mc
         ali_src=${FEAT_EXP}/${ali}_mc
     fi
-
+    org_tr_dir=${tr_dir}
 	if [[ -n ${fmllr} ]]; then
 		fmllr_tr_mc $(concat_opts gmm ${raw} mc)
 		tr_dir=${FMLLR_TR_MC}
+        [[ ${ali_src/fmllr/} == ${ali_src} ]] && ali_opts="--fmllr fmllr"
 	fi
     
-    alignment $ali_opts $ali_src $tr_dir
-    ali_dir=$(alignment $ali_opts $ali_src $tr_dir)
+    alignment $ali_opts $ali_src $org_tr_dir
+    ali_dir=$(alignment $ali_opts $ali_src $org_tr_dir)
 
     dnn_extra_opts="--num_epochs 20 --num-epochs-extra 10 --add-layers-period 1 --shrink-interval 3"
 	# --num-threads 1 \
