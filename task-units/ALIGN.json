@@ -1,0 +1,7 @@
+{"Name":"tri1.cmn","Exp":"GMM","Feat":"mfcc","Label":"normal","Dynamic":"delta","Norm":{"Cmvn":{"Vars":false}},"MC":false}
+{"Name":"tri1.cmvn","Exp":"GMM","Feat":"mfcc","Label":"normal","Dynamic":"delta","Norm":{"Cmvn":{"Vars":true}},"MC":false}
+{"Name":"tri1.cmn","Exp":"GMM","Feat":"mfcc","Label":"normal","Dynamic":"delta","Norm":{"Cmvn":{"Vars":false}},"MC":true}
+{"Name":"tri1.cmvn","Exp":"GMM","Feat":"mfcc","Label":"normal","Dynamic":"delta","Norm":{"Cmvn":{"Vars":true}},"MC":true}
+{"Name":"tri2.cmn","Exp":"GMM","Feat":"mfcc","Label":"normal","Dynamic":"delta","Norm":{"Cmvn":{"Vars":false}},"MC":true}
+{"Name":"tri2.cmvn","Exp":"GMM","Feat":"mfcc","Label":"normal","Dynamic":"delta","Norm":{"Cmvn":{"Vars":true}},"MC":true}
+

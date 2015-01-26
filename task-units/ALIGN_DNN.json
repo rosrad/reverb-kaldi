@@ -1,0 +1,7 @@
+{"Name":"tri1.cmn","Exp":"DNN","Feat":"mfcc","Label":"normal","Dynamic":"delta","MC":false}
+{"Name":"tri1.cmvn","Exp":"DNN","Feat":"mfcc","Label":"normal","Dynamic":"delta","MC":false}
+{"Name":"tri1.cmn","Exp":"DNN","Feat":"mfcc","Label":"normal","Dynamic":"delta","MC":true}
+{"Name":"tri1.cmvn","Exp":"DNN","Feat":"mfcc","Label":"normal","Dynamic":"delta","MC":true}
+{"Name":"tri2.cmn","Exp":"DNN","Feat":"mfcc","Label":"normal","Dynamic":"delta","MC":true}
+{"Name":"tri2.cmvn","Exp":"DNN","Feat":"mfcc","Label":"normal","Dynamic":"delta","MC":true}
+

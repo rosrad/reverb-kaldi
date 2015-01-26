@@ -1,0 +1,2 @@
+{"Name":"mono","Exp":"GMM","Feat":"mfcc","Label":"normal","Dynamic":"delta","MC":false,"Norm":{"Cmvn":{"Vars":false}},"Extra":"--boost-silence 1.25"}
+{"Name":"mono","Exp":"GMM","Feat":"mfcc","Label":"normal","Dynamic":"delta","MC":true,"Norm":{"Cmvn":{"Vars":false}},"Extra":"--boost-silence 1.25"}

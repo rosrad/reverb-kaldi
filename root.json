@@ -1,0 +1,3 @@
+{"Root":"tmp","LM":"bg","Btrain":true,"Bgraph":true,"Bdecode":true,"Bscore":true}
+{"Root":"tmp","LM":"bg","Btrain":false,"Bgraph":false,"Bdecode":true,"Bscore":true}
+{"Root":"tmp","LM":"bg","Btrain":false,"Bgraph":true,"Bdecode":true,"Bscore":true}

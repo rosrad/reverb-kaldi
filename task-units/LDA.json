@@ -1,0 +1,2 @@
+{"Dst":{"Name":"tri1.cmn","Exp":"LDA","Feat":"mfcc","Label":"normal"},"Src":{"Name":"tri1.cmn","Exp":"GMM","Feat":"mfcc","Label":"normal"},"Context":4,"Dynamic":"delta","MC":true,"Norm":{"Method":"cmvn","Cmvn":{"Vars":false}},"Btrain":false,"Bdecode":true,"Bscore":true}
+{"Dst":{"Name":"tri1.cmvn","Exp":"LDA","Feat":"mfcc","Label":"normal"},"Src":{"Name":"tri1.cmn","Exp":"GMM","Feat":"mfcc","Label":"normal"},"Context":4,"Dynamic":"delta","MC":true,"Norm":{"Method":"cmvn","Cmvn":{"Vars":true}},"Btrain":true,"Bdecode":true,"Bscore":true}

@@ -1,0 +1,2 @@
+{"Dst":{"Name":"","Exp":"DNN","Feat":"bnf","Label":"tri1.cln.raw.perutt"},"Dynamic":"raw","Norm":{"Cmvn":{"PerUtt":true,"Mean":true,"Vars":false}},"Src":{"Name":"tri1.cmn","Exp":"GMM","Feat":"mfcc","Label":"normal"},"DnnConf":{"MinBatch":256,"Jobs":16,"Layers":5,"Context":4,"Gpu":true},"Name":"BNF","Tag":"","Time":"","Valid":true,"Btrain":true,"Bdecode":true,"Bscore":false}
+

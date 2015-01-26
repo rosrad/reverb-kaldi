@@ -1,0 +1,4 @@
+{"Src":{"Name":"tri1.cmn","Exp":"GMM","Feat":"mfcc","Label":"normal"},"Bestimation":true}
+{"Src":{"Name":"tri1.cmvn","Exp":"GMM","Feat":"mfcc","Label":"normal"},"Bestimation":true}
+{"Src":{"Name":"tri2.cmn","Exp":"GMM","Feat":"mfcc","Label":"normal"},"Bestimation":true}
+{"Src":{"Name":"tri2.cmvn","Exp":"GMM","Feat":"mfcc","Label":"normal"},"Bestimation":true}

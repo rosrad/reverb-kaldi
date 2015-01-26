@@ -1,0 +1,2 @@
+{"Dst":{"Name":"tri2.cmn","Exp":"DISCDNN","Feat":"mfcc","Label":"normal"},"Src":{"Name":"tri2.cmn","Exp":"DNN","Feat":"mfcc","Label":"normal"},"DiscDnnConf":{"Criterion":"mpe","Jobs":4,"Gpu":true},"Dynamic":"delta","Norm":{"Cmvn":{"Mean":true,"Vars":false}},"TaskConf":{"Btrain":true,"Bdecode":true,"Bscore":true}}
+

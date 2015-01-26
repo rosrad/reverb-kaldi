@@ -1,0 +1,1 @@
+{"Dst":{"Name":"mslp.dnn_dae.gmm_tri1.cmn","Exp":"COMBINE","Feat":"mfcc","Label":"normal", "Root":"combine-tmp"},"Src":{"Name":"tri1.cmn","Exp":"GMM","Feat":"mfcc","Label":"normal","Root":"mslp-tmp"},"Src2":{"Name":"tri1.cmn","Exp":"DNN","Feat":"mfcc","Label":"normal","Root":"mslp-tmp"},"TaskConf":{"Bdecode":true,"Bscore":true}}

@@ -1,0 +1,4 @@
+{"Name":"tri1","Exp":"GMM","Feat":"mfcc","Label":"FMLLR.bnf.tri1.cmn.raw.perutt_tri1.cmn","TaskBase":{"Name":"Cmvn","Tag":"","Time":"02:30:14 23/11/2014","Valid":true}}
+{"Name":"tri1","Exp":"GMM","Feat":"mfcc","Label":"FMLLR.bnf.tri1.cmn.raw.perutt_tri1.cmvn","TaskBase":{"Name":"Cmvn","Tag":"","Time":"02:30:14 23/11/2014","Valid":true}}
+{"Name":"tri1","Exp":"GMM","Feat":"mfcc","Label":"FMLLR.bnf.tri1.cmn.raw.perutt_tri2.cmn","TaskBase":{"Name":"Cmvn","Tag":"","Time":"02:30:14 23/11/2014","Valid":true}}
+{"Name":"tri1","Exp":"GMM","Feat":"mfcc","Label":"FMLLR.bnf.tri1.cmn.raw.perutt_tri2.cmvn","TaskBase":{"Name":"Cmvn","Tag":"","Time":"02:30:14 23/11/2014","Valid":true}}

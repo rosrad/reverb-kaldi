@@ -1,0 +1,2 @@
+{"Name":"tri1.cmn","Exp":"DNN","Feat":"mfcc","Label":"normal","Dynamic":"delta","MC":true}
+{"Name":"tri1.cmvn","Exp":"DNN","Feat":"mfcc","Label":"normal","Dynamic":"delta","MC":true}

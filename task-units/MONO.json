@@ -1,0 +1,2 @@
+{"Dst":{"Name":"mono","Exp":"GMM","Feat":"mfcc","Label":"normal"},"Src":{"Name":"mono","Exp":"GMM","Feat":"mfcc","Label":"normal"},"MC":false,"Dynamic":"delta","Norm":{"Cmvn":{"Vars":false}},"Btrain":true,"Bdecode":true,"Bscore":true}
+{"Dst":{"Name":"mono","Exp":"GMM","Feat":"mfcc","Label":"normal"},"Src":{"Name":"mono","Exp":"GMM","Feat":"mfcc","Label":"normal"},"MC":true,"Dynamic":"delta","Norm":{"Cmvn":{"Vars":false}},"Btrain":true,"Bdecode":true,"Bscore":true}
