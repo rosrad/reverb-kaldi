@@ -5,7 +5,7 @@
 # This script trains a fairly vanilla network with tanh nonlinearities.
 
 # Begin configuration section.
-cmd=run.pl
+cmd=utils/run.pl
 num_epochs=15      # Number of epochs during which we reduce
                    # the learning rate; number of iteration is worked out from this.
 num_epochs_extra=5 # Number of epochs after we stop reducing
@@ -69,6 +69,9 @@ egs_opts=
 transform_dir=
 prior_subset_size=10000 # 10k samples per job, for computing priors.  Should be
                         # more than enough.
+cmvn_opts=
+feat_type=
+feat=
 # End configuration section.
 
 
@@ -153,7 +156,7 @@ cp $alidir/tree $dir
 
 if [ $stage -le -4 ]; then
   echo "$0: calling get_lda.sh"
-  steps/nnet2/get_lda.sh $lda_opts --transform-dir $transform_dir --splice-width $splice_width --cmd "$cmd" $data $lang $alidir $dir || exit 1;
+  steps/nnet2/get_lda.sh $lda_opts --transform-dir $transform_dir --feat "${feat}" --splice-width $splice_width --cmd "$cmd" $data $lang $alidir $dir || exit 1;
 fi
 
 # these files will have been written by get_lda.sh
@@ -165,7 +168,7 @@ if [ $stage -le -3 ] && [ -z "$egs_dir" ]; then
   [ ! -z $spk_vecs_dir ] && spk_vecs_opt="--spk-vecs-dir $spk_vecs_dir";
   steps/nnet2/get_egs.sh $spk_vecs_opt --transform-dir $transform_dir --samples-per-iter $samples_per_iter \
       --num-jobs-nnet $num_jobs_nnet --splice-width $splice_width --stage $get_egs_stage \
-      --cmd "$cmd" $egs_opts --io-opts "$io_opts" \
+      --feat "${feat}" --cmd "$cmd" $egs_opts --io-opts "$io_opts" \
       $data $lang $alidir $dir || exit 1;
 fi
 

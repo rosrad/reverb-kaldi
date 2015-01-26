@@ -4,7 +4,7 @@
 # Apache 2.0.
 
 # Begin configuration.
-cmd=run.pl
+cmd=utils/run.pl
 config=
 stage=-5
 scale_opts="--transition-scale=1.0 --acoustic-scale=0.1 --self-loop-scale=0.1"
@@ -19,14 +19,12 @@ boost_silence=1.0 # Factor by which to boost silence likelihoods in alignment
 power=0.25 # Exponent for number of gaussians according to occurrence counts
 randprune=4.0 # This is approximately the ratio by which we will speed up the
 # LDA and MLLT calculations via randomized pruning.
-splice_opts=
 cluster_thresh=-1  # for build-tree control final bottom-up clustering of leaves
-norm_vars=false # deprecated.  Prefer --cmvn-opts "--norm-vars=false"
-cmvn_opts=
 # End configuration.
 train_tree=true  # if false, don't actually train the tree.
 use_lda_mat=  # If supplied, use this LDA[+MLLT] matrix.
-feat_type=
+feat=
+
 echo "$0 $@"  # Print the command line for logging
 
 [ -f path.sh ] && . ./path.sh
@@ -64,26 +62,13 @@ mkdir -p $dir/log
 echo $nj >$dir/num_jobs
 
 # so that later stages of system building can know what they were.
-
-
-[ $(cat $alidir/cmvn_opts 2>/dev/null | wc -c) -gt 1 ] && [ -z "$cmvn_opts" ] && \
-    echo "$0: warning: ignoring CMVN options from source directory $alidir"
-$norm_vars && cmvn_opts="--norm-vars=true $cmvn_opts"
-echo $cmvn_opts > $dir/cmvn_opts # keep track of options to CMVN.
-
 sdata=$data/split$nj;
-split_data.sh $data $nj || exit 1;
+utils/split_data.sh $data $nj || exit 1;
 
 # for tracking the feat-type
-# call it like a function , because bash can not return string ,we do like this
-src_dir=$alidir
-dest_dir=$dir
-. steps/feat_track.sh
-splicedfeats=$org_feats
-echo "$0: feature type is $feat_type"
-
-echo "$splice_opts" >$dir/lda_splice_opts # keep track of frame-splicing options
-echo "${feat_type}-lda" >$dir/feat_type # keep track of feature for lda
+echo "${feat}" > $dir/feat_opt
+splicedfeats=$(echo ${feat} | sed -s 's#SDATA_JOB#'${sdata}'/JOB#g')
+echo "${feats}" >$dir/feat_string # keep track of feature type 
 
 # Note: $feats gets overwritten later in the script.
 feats="${splicedfeats} transform-feats $dir/0.mat ark:- ark:- |"

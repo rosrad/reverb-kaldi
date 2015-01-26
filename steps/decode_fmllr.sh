@@ -38,14 +38,14 @@ beam=13.0
 lattice_beam=6.0
 nj=4
 silence_weight=0.01
-cmd=run.pl
+cmd=utils/run.pl
 si_dir=
 fmllr_update_type=full
 num_threads=1 # if >1, will use gmm-latgen-faster-parallel
 parallel_opts=  # If you supply num-threads, you should supply this too.
 skip_scoring=false
 scoring_opts=
-feat_type=
+feat=
 # End configuration section
 echo "$0 $@"  # Print the command line for logging
 
@@ -77,7 +77,6 @@ fi
 graphdir=$1
 data=$2
 dir=`echo $3 | sed 's:/$::g'` # remove any trailing slash.
-
 srcdir=`dirname $dir`; # Assume model directory one level up from decoding directory.
 sdata=$data/split$nj;
 
@@ -86,10 +85,8 @@ thread_string=
 
 
 mkdir -p $dir/log
-split_data.sh $data $nj || exit 1;
+utils/split_data.sh $data $nj || exit 1;
 echo $nj > $dir/num_jobs
-splice_opts=`cat $srcdir/splice_opts 2>/dev/null` # frame-splicing options.
-cmvn_opts=`cat $srcdir/cmvn_opts 2>/dev/null`
 
 silphonelist=`cat $graphdir/phones/silence.csl` || exit 1;
 
@@ -133,12 +130,9 @@ done
 
 # for tracking the feat-type
 # call it like a function , because bash can not return string ,we do like this
-src_dir=$srcdir
-dest_dir=$dir
-. steps/feat_track.sh
-sifeats=$org_feats
-echo "$0: feature type is $feat_type"
-
+echo "${feat}" > $dir/feat_opt
+feats=$(echo ${feat} | sed -s 's#SDATA_JOB#'${sdata}'/JOB#g')
+echo "${feats}" >$dir/feat_string # keep track of feature type 
 
 ## Now get the first-pass fMLLR transforms.
 if [ $stage -le 1 ]; then
@@ -213,4 +207,11 @@ fi
 rm $dir/{trans_tmp,pre_trans}.*
 
 exit 0;
+
+
+
+
+
+
+
 

@@ -20,7 +20,7 @@ scoring_opts=
 # note: there are no more min-lmwt and max-lmwt options, instead use
 # e.g. --scoring-opts "--min-lmwt 1 --max-lmwt 20"
 skip_scoring=false
-feat_type=
+feat=
 # End configuration section.
 
 echo "$0 $@"  # Print the command line for logging
@@ -51,12 +51,12 @@ if [ $# != 3 ]; then
 	exit 1;
 fi
 
-
 graphdir=$1
 data=$2
 dir=$3
 srcdir=`dirname $dir`; # The model directory is one level up from decoding directory.
 sdata=$data/split$nj;
+
 
 mkdir -p $dir/log
 [[ -d $sdata && $data/feats.scp -ot $sdata ]] || split_data.sh $data $nj || exit 1;
@@ -67,7 +67,7 @@ if [ -z "$model" ]; then # if --model <mdl> was not specified on the command lin
 	else model=$srcdir/$iter.mdl; fi
 fi
 
-for f in $sdata/1/feats.scp $sdata/1/cmvn.scp $model $graphdir/HCLG.fst; do
+for f in $sdata/1/feats.scp $model $graphdir/HCLG.fst; do
 	[ ! -f $f ] && echo "decode.sh: no such file $f" && exit 1;
 done
 
@@ -79,12 +79,10 @@ cmvn_opts=`cat $srcdir/cmvn_opts 2>/dev/null`
 thread_string=
 [ $num_threads -gt 1 ] && thread_string="-parallel --num-threads=$num_threads" 
 
-# for tracking the feat-type
-src_dir=$srcdir
-dest_dir=$dir
-. steps/feat_track.sh
-feats=$org_feats
-echo "$0: feature type is $feat_type"
+echo "${feat}" > $dir/feat_opt
+feats=$(echo ${feat} | sed -s 's#SDATA_JOB#'${sdata}'/JOB#g')
+echo "${feats}" >$dir/feat_string # keep track of feature type 
+
 
 if [ ! -z "$transform_dir" ]; then # add transforms to features...
 	echo "Using fMLLR transforms from $transform_dir"

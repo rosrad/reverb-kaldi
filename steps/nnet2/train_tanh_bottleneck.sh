@@ -5,7 +5,7 @@
 # This script trains a fairly vanilla network with tanh nonlinearities to generate bottleneck features
 
 # Begin configuration section.
-cmd=run.pl
+cmd=utils/run.pl
 num_epochs=15    # Number of epochs during which we reduce
                    # the learning rate; number of iteration is worked out from this.
 num_epochs_extra=5 # Number of epochs after we stop reducing
@@ -71,6 +71,7 @@ lda_opts=
 egs_opts=
 transform_dir=
 nj=
+feat=
 # End configuration section.
 
 
@@ -162,7 +163,7 @@ cp $alidir/tree $dir
 truncate_comp_num=$[2*$num_hidden_layers+1]
 if [ $stage -le -4 ]; then
   echo "$0: calling get_lda.sh"
-  steps/nnet2/get_lda.sh $lda_opts --splice-width $splice_width --cmd "$cmd" $data $lang $alidir $dir || exit 1;
+  steps/nnet2/get_lda.sh $lda_opts --splice-width $splice_width --cmd "$cmd" --feat "${feat}" $data $lang $alidir $dir || exit 1;
 fi
 
 # these files will have been written by get_lda.sh
@@ -173,7 +174,8 @@ if [ $stage -le -3 ] && [ -z "$egs_dir" ]; then
   echo "$0: calling get_egs.sh"
   [ ! -z $transform_dir ] && $transform_dir_opt="--transform-dir $transform_dir";
   steps/nnet2/get_egs.sh $transform_dir_opt --samples-per-iter $samples_per_iter \
-      --num-jobs-nnet $num_jobs_nnet --splice-width $splice_width --stage $get_egs_stage \
+      --num-jobs-nnet $num_jobs_nnet --splice-width $splice_width --feat "${feat}" \
+      --stage $get_egs_stage \
       --cmd "$cmd" $egs_opts --io-opts "$io_opts" \
       $data $lang $alidir $dir || exit 1;
 fi

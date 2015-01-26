@@ -12,19 +12,21 @@
 # The first argument is supposed to point to a folder that has the same structure
 # as the REVERB corpus.
 
-local/REVERB_wsjcam0_data_prep.sh $reverb_tr REVERB_tr_cut tr || exit 1;
-local/REVERB_wsjcam0_data_prep.sh $reverb_dt REVERB_dt dt     || exit 1;
+# local/REVERB_wsjcam0_data_prep.sh $reverb_tr_cut REVERB_tr_cut tr || exit 1;
+local/REVERB_wsjcam0_data_prep.sh $reverb_tr REVERB_tr tr || exit 1;
+return 
+# local/REVERB_wsjcam0_data_prep.sh $reverb_dt REVERB_dt dt     || exit 1;
 
-local/REVERB_wsjcam0_data_prep.sh $phone_dt PHONE_dt phone     || exit 1;
-local/REVERB_wsjcam0_data_prep.sh $phone_sel_dt PHONE_SEL_dt phone_sel     || exit 1;
+# local/REVERB_wsjcam0_data_prep.sh $phone_dt PHONE_dt phone     || exit 1;
+# local/REVERB_wsjcam0_data_prep.sh $phone_sel_dt PHONE_SEL_dt phone_sel     || exit 1;
 
 # local/REVERB_wsjcam0_data_prep.sh $reverb_et REVERB_et et     || exit 1;
 
 # Prepare the REVERB "real" dt set from MCWSJAV corpus.
 # This corpus is *never* used for training.
 # This creates the data set called REVERB_Real_dt and its subfolders
-# local/REVERB_mcwsjav_data_prep.sh $reverb_real_dt REVERB_Real_dt dt || exit 1;
+local/REVERB_mcwsjav_data_prep.sh $reverb_real_dt REVERB_REAL_dt dt || exit 1;
 # The MLF file exists only once in the corpus, namely in the real_dt directory
 # so we pass it as 4th argument
-# local/REVERB_mcwsjav_data_prep.sh $reverb_real_et REVERB_Real_et et $reverb_real_dt/mlf/WSJ.mlf || exit 1;
+local/REVERB_mcwsjav_data_prep.sh $reverb_real_et REVERB_REAL_et et $reverb_real_dt/mlf/WSJ.mlf || exit 1;
 

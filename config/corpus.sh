@@ -4,7 +4,10 @@
 export base=/CDShare/Corpus/REVERB/
 export wsj0cam=${base}/wsjcam0
 export reverb_lm=${base}/WSJ0_LangMod_REVERB
-export reverb_tr=/home/14/ren/work/data/reverb_task/kaldi_task/source/REVERB_WSJCAM0_tr_cut
+export reverb_tr=/CDShare/Corpus/REVERB/REVERB_WSJCAM0_tr
+export mslp_data=/home/14/ren/work/data/reverb_task/kaldi_task/source/cut_MSLP/
+export TASKFILES=${mslp_data}/taskFiles
+export reverb_tr_cut=/home/14/ren/work/data/reverb_task/kaldi_task/source/REVERB_WSJCAM0_tr_cut
 # export reverb_tr=/home/14/ren/work/data/reverb14_kaldi_baseline/REVERB_WSJCAM0_tr_cut
 # export reverb_dt=/home/14/ren/work/data/reverb_task/telephone/source/set13_dis/iphone/
 export phone_dt=/home/14/ren/work/data/reverb_task/telephone/source/set13_dis/iphone/

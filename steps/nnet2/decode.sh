@@ -12,7 +12,7 @@ stage=1
 transform_dir=    # dir to find fMLLR transforms.
 nj=4 # number of decoding jobs.  If --transform-dir set, must match that number!
 acwt=0.1  # Just a default value, used for adaptation and beam-pruning..
-cmd=run.pl
+cmd=utils/run.pl
 beam=15.0
 max_active=7000
 lattice_beam=8.0 # Beam we use in lattice generation.
@@ -21,9 +21,9 @@ num_threads=1 # if >1, will use gmm-latgen-faster-parallel
 parallel_opts=  # If you supply num-threads, you should supply this too.
 scoring_opts=
 skip_scoring=false
-feat_type=
 spk_vecs_dir=
 minimize=false
+feat=
 # End configuration section.
 
 echo "$0 $@"  # Print the command line for logging
@@ -60,30 +60,17 @@ for f in $graphdir/HCLG.fst $data/feats.scp $model; do
 done
 
 sdata=$data/split$nj;
-cmvn_opts=`cat $srcdir/cmvn_opts 2>/dev/null`
 thread_string=
 [ $num_threads -gt 1 ] && thread_string="-parallel --num-threads=$num_threads" 
 
 mkdir -p $dir/log
-[[ -d $sdata && $data/feats.scp -ot $sdata ]] || split_data.sh $data $nj || exit 1;
+[[ -d $sdata && $data/feats.scp -ot $sdata ]] || utils/split_data.sh $data $nj || exit 1;
 echo $nj > $dir/num_jobs
 
 
-## Set up features.
-# for tracking the feat-type
-src_dir=$srcdir
-dest_dir=$dir
-. steps/feat_track.sh
-feats=$org_feats
-echo "$0: feature type is $feat_type"
-
-
-# case $feat_type in
-#   raw) feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- |";;
-#   lda) feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | splice-feats $splice_opts ark:- ark:- | transform-feats $srcdir/final.mat ark:- ark:- |"
-#     ;;
-#   *) echo "$0: invalid feature type $feat_type" && exit 1;
-# esac
+echo "${feat}" > $dir/feat_opt
+feats=$(echo ${feat} | sed -s 's#SDATA_JOB#'${sdata}'/JOB#g')
+echo "${feats}" >$dir/feat_string # keep track of feature type 
 
 if [ ! -z "$transform_dir" ]; then
   echo "$0: using transforms from $transform_dir"

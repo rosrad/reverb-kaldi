@@ -6,8 +6,8 @@
 # the validation examples used for diagnostics), and puts them in separate archives.
 
 # Begin configuration section.
-cmd=run.pl
-feat_type=
+cmd=utils/run.pl
+feat=
 num_utts_subset=300    # number of utterances in validation and training
 # subsets used for shrinkage and diagnostics
 num_valid_frames_combine=0 # #valid frames for combination weights at the very end.
@@ -23,7 +23,6 @@ io_opts="-tc 5" # for jobs with a lot of I/O, limits the number running at one t
 splice_width=4 # meaning +- 4 frames on each side for second LDA
 spk_vecs_dir=
 random_copy=false
-
 echo "$0 $@"  # Print the command line for logging
 
 if [ -f path.sh ]; then . ./path.sh; fi
@@ -101,13 +100,16 @@ awk '{print $1}' $data/utt2spk | utils/filter_scp.pl --exclude $dir/valid_uttlis
 cmvn_opts=`cat $alidir/cmvn_opts 2>/dev/null`
 cp $alidir/cmvn_opts $dir 2>/dev/null
 
-## Set up features. 
-src_dir=$alidir
-dest_dir=$dir
-. steps/feat_track.sh
-echo "$0: feature type is $feat_type"
-feats=$(echo $org_feats | sed 's#ark,s,cs:#ark,s,cs:utils/filter_scp.pl --exclude '$dir'/valid_uttlist '$sdata'/JOB/feats.scp | #g' \
+
+echo "${feat}" > $dir/feat_opt
+feats=$(echo ${feat} | sed -s 's#SDATA_JOB#'${sdata}'/JOB#g')
+echo "${feats}" >$dir/feat_string # keep track of feature type 
+
+
+feats=$(echo $feats | sed 's#ark,s,cs:#ark,s,cs:utils/filter_scp.pl --exclude '$dir'/valid_uttlist '$sdata'/JOB/feats.scp | #g' \
     | sed 's#scp:'$sdata'/JOB/feats.scp#scp:-#')
+echo "$0: feature is  ${feats}"
+
 valid_feats=$(echo ${feats}|sed 's#--exclude ##g'|sed 's#'$sdata'/JOB#'$data'#g')
 train_subset_feats=$(echo ${valid_feats}|sed 's#valid_uttlist#train_subset_uttlist#g')
 

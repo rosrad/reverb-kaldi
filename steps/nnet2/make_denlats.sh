@@ -7,7 +7,7 @@
 
 # Begin configuration section.
 nj=4
-cmd=run.pl
+cmd=utils/run.pl
 sub_split=1
 beam=13.0
 lattice_beam=7.0
@@ -55,7 +55,6 @@ for f in $data/feats.scp $lang/L.fst $srcdir/final.mdl; do
 done
 
 sdata=$data/split$nj
-splice_opts=`cat $srcdir/splice_opts 2>/dev/null`
 thread_string=
 [ $num_threads -gt 1 ] && thread_string="-parallel --num-threads=$num_threads"
 
@@ -87,19 +86,16 @@ if [ -s $dir/dengraph/HCLG.fst ] && [ $dir/dengraph/HCLG.fst -nt $srcdir/final.m
 else
   utils/mkgraph.sh $new_lang $srcdir $dir/dengraph || exit 1;
 fi
-cmvn_opts=`cat $srcdir/cmvn_opts 2>/dev/null`
-cp $srcdir/cmvn_opts $dir 2>/dev/null
 
-if [ -f $srcdir/final.mat ]; then feat_type=lda; else feat_type=delta; fi
-echo "align_si.sh: feature type is $feat_type"
 
-case $feat_type in
-  delta) feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | add-deltas ark:- ark:- |";;
-  lda) feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | splice-feats $splice_opts ark:- ark:- | transform-feats $srcdir/final.mat ark:- ark:- |"
-    cp $srcdir/final.mat $dir    
-   ;;
-  *) echo "Invalid feature type $feat_type" && exit 1;
-esac
+# if [ -f $srcdir/final.mat ]; then feat_type=lda; else feat_type=delta; fi
+# echo "align_si.sh: feature type is $feat_type"
+
+## Set up features. 
+echo "${feat}" > $dir/feat_opt
+feats=$(echo ${feat} | sed -s 's#SDATA_JOB#'${sdata}'/JOB#g')
+echo "${feats}" >$dir/feat_string # keep track of feature type 
+
 
 if [ ! -z "$transform_dir" ]; then # add transforms to features...
   echo "$0: using fMLLR transforms from $transform_dir"
@@ -128,7 +124,7 @@ else
     else 
       sdata2=$data/split$nj/$n/split$sub_split;
       if [ ! -d $sdata2 ] || [ $sdata2 -ot $sdata/$n/feats.scp ]; then
-        split_data.sh --per-utt $sdata/$n $sub_split || exit 1;
+        utils/split_data.sh --per-utt $sdata/$n $sub_split || exit 1;
       fi
       mkdir -p $dir/log/$n
       mkdir -p $dir/part

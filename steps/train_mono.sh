@@ -9,7 +9,7 @@
 
 # Begin configuration section.
 nj=4
-cmd=run.pl
+cmd=utils/run.pl
 scale_opts="--transition-scale=1.0 --acoustic-scale=0.1 --self-loop-scale=0.1"
 num_iters=40    # Number of iterations of training
 max_iter_inc=30 # Last iter to increase #Gauss on.
@@ -20,8 +20,7 @@ config= # name of config file.
 stage=-4
 power=0.25 # exponent to determine number of gaussians from occurrence counts
 feat_dim=-1 # This option is now ignored but retained for compatibility.
-norm_vars=false # deprecated, prefer --cmvn-opts "--norm-vars=false"
-cmvn_opts=  # can be used to add extra options to cmvn.
+feat=
 # End configuration section.
 
 echo "$0 $@"  # Print the command line for logging
@@ -44,21 +43,19 @@ fi
 data=$1
 lang=$2
 dir=$3
-
 oov_sym=`cat $lang/oov.int` || exit 1;
 
 mkdir -p $dir/log
 echo $nj > $dir/num_jobs
 sdata=$data/split$nj;
-[[ -d $sdata && $data/feats.scp -ot $sdata ]] || split_data.sh $data $nj || exit 1;
+[[ -d $sdata && $data/feats.scp -ot $sdata ]] || utils/split_data.sh $data $nj || exit 1;
 
+echo "${feat}" > $dir/feat_opt
+feats=$(echo ${feat} | sed -s 's#SDATA_JOB#'${sdata}'/JOB#g')
+echo "${feats}" >$dir/feat_string # keep track of feature type 
 
-$norm_vars && cmvn_opts="--norm-vars=true $cmvn_opts"
-echo $cmvn_opts  > $dir/cmvn_opts # keep track of options to CMVN.
-
-feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | add-deltas ark:- ark:- |"
 example_feats="`echo $feats | sed s/JOB/1/g`";
-
+echo "egs feats:" $example_feats
 echo "$0: Initializing monophone system."
 
 [ ! -f $lang/phones/sets.int ] && exit 1;
@@ -80,7 +77,7 @@ if [ $stage -le -2 ]; then
   echo "$0: Compiling training graphs"
   $cmd JOB=1:$nj $dir/log/compile_graphs.JOB.log \
     compile-train-graphs $dir/tree $dir/0.mdl  $lang/L.fst \
-    "ark:sym2int.pl --map-oov $oov_sym -f 2- $lang/words.txt < $sdata/JOB/text|" \
+    "ark:utils/sym2int.pl --map-oov $oov_sym -f 2- $lang/words.txt < $sdata/JOB/text|" \
     "ark:|gzip -c >$dir/fsts.JOB.gz" || exit 1;
 fi
 

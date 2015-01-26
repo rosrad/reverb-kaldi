@@ -6,7 +6,7 @@
 # Begin configuration.
 stage=-100 #  This allows restarting after partway, when something when wrong.
 config=
-cmd=run.pl
+cmd=utils/run.pl
 scale_opts="--transition-scale=1.0 --acoustic-scale=0.1 --self-loop-scale=0.1"
 realign_iters="10 15 20";
 num_iters=25    # Number of iterations of training
@@ -19,9 +19,8 @@ power=0.25 # Exponent for number of gaussians according to occurrence counts
 cluster_thresh=-1  # for build-tree control final bottom-up clustering of leaves
 num_gselect1=50
 num_gselect2=15
-#splice_opts="--left-context=1 --right-context=1"
 rand_prune=0.1 # Randomized-pruning parameter for posteriors, to speed up training.
-feat_type=
+feat=
 # End configuration.
 
 echo "$0 $@"  # Print the command line for logging
@@ -60,25 +59,13 @@ nj=`cat $alidir/num_jobs` || exit 1;
 mkdir -p $dir/log
 echo $nj > $dir/num_jobs
 
-splice_opts=`cat $alidir/splice_opts 2>/dev/null` # frame-splicing options.
-cp $alidir/splice_opts $dir
-
-cmvn_opts=$(cat $alidir/cmvn_opts 2>/dev/null)
-cp $alidir/cmvn_opts $dir 2>/dev/null
-
 sdata=$data/split$nj;
-[[ -d $sdata && $data/feats.scp -ot $sdata ]] || split_data.sh $data $nj || exit 1;
+[[ -d $sdata && $data/feats.scp -ot $sdata ]] || utils/split_data.sh $data $nj || exit 1;
 
-# for tracking the feat-type
-# call it like a function , because bash can not return string ,we do like this
-src_dir=$alidir
-dest_dir=$dir
-. steps/feat_track.sh
-feats=$org_feats
-echo "$0: feature type is $feat_type"
 
-# feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:-  | add-deltas ark:- ark: |"
-# [[ -n $splice_opts ]] && feats=${feats}"splice-feats $splice_opts ark:- ark:- |"
+echo "${feat}" > $dir/feat_opt
+feats=$(echo ${feat} | sed -s 's#SDATA_JOB#'${sdata}'/JOB#g')
+echo "${feats}" >$dir/feat_string # keep track of feature type 
 
 feats_one="$(echo "$feats" | sed s:JOB:1:g)"
 feat_dim=$(feat-to-dim "$feats_one" -) || exit 1;

@@ -353,7 +353,7 @@ function bottleneck_dnn() {
 	
     [[ ! -e $BNF_MDL_EXP ]] && mkdir -p ${BNF_MDL_EXP}
 	[[ -n $tag ]] && mdl_dir="${mdl_dir}.${tag}"
-	echo steps/nnet2/train_tanh_bottleneck.sh \
+    echo steps/nnet2/train_tanh_bottleneck.sh \
         --stage $stage --num-jobs-nnet 4 \
 		--num-threads 1 \
 		--mix-up 5000 --max-change 40 \
@@ -361,6 +361,7 @@ function bottleneck_dnn() {
         --initial-learning-rate 0.005 \
         --final-learning-rate 0.0005 \
         --num-hidden-layers 5 \
+        --feat-type "delta" \
         --bottleneck-dim 42 --hidden-layer-dim 1024 \
         ${tr_dir} ${DATA}/lang $ali_dir ${mdl_dir} || exit 1
 }

@@ -8,7 +8,7 @@ transform_dir=
 iter=
 model= # You can specify the model to use (e.g. if you want to use the .alimdl)
 nj=4
-cmd=run.pl
+cmd=utils/run.pl
 max_active=7000
 beam=13.0
 latbeam=6.0
@@ -16,7 +16,7 @@ acwt=0.083333 # note: only really affects pruning (scoring is on lattices).
 min_lmwt=6
 max_lmwt=20
 stage=-2
-feat_type=
+feat=
 # End configuration section.
 
 echo "$0 $@"  # Print the command line for logging
@@ -56,8 +56,10 @@ dir=$3
 srcdir=`dirname $dir`; # The model directory is one level up from decoding directory.
 sdata=$data/split$nj;
 
+echo "$0 $@" > $dir/cmd
+
 mkdir -p $dir/log
-[[ -d $sdata && $data/feats.scp -ot $sdata ]] || split_data.sh $data $nj || exit 1;
+[[ -d $sdata && $data/feats.scp -ot $sdata ]] || utils/split_data.sh $data $nj || exit 1;
 echo $nj > $dir/num_jobs
 
 if [ -z "$model" ]; then # if --model <mdl> was not specified on the command line...
@@ -65,17 +67,14 @@ if [ -z "$model" ]; then # if --model <mdl> was not specified on the command lin
 	else model=$srcdir/$iter.mdl; fi
 fi
 
-for f in $sdata/1/feats.scp $sdata/1/cmvn.scp $model $graphdir/HCLG.fst; do
+for f in $sdata/1/feats.scp $sdata/1/cmvn_*.scp $model $graphdir/HCLG.fst; do
 	[ ! -f $f ] && echo "decode.sh: no such file $f" && exit 1;
 done
 
-cmvn_opts=$(cat $srcdir/cmvn_opts 2>/dev/null)
+echo "${feat}" > $dir/feat_opt
+feats=$(echo ${feat} | sed -s 's#SDATA_JOB#'${sdata}'/JOB#g')
+echo "${feats}" >$dir/feat_string # keep track of feature type 
 
-# for tracking the feat-type
-src_dir=$srcdir
-dest_dir=$dir
-. steps/feat_track.sh
-feats=$org_feats
 
 feats_one="$(echo "$feats" | sed s:JOB:1:g)"
 feat_dim=$(feat-to-dim "$feats_one" -) || exit 1;

@@ -7,16 +7,15 @@
 # Begin configuration section.  
 stage=1
 nj=4
-cmd=run.pl
+cmd=utils/run.pl
 
 # Begin configuration.
 transform_dir=
-
+feat=
 # End configuration options.
 
 echo "$0 $@"  # Print the command line for logging
 
-[ -f path.sh ] && . ./path.sh # source the path.
 . parse_options.sh || exit 1;
 
 if [ $# != 5 ]; then
@@ -57,21 +56,13 @@ mkdir -p $bnf_data
 [[ ! -d ${archivedir} ]] && mkdir -p ${archivedir}
 echo $nj > $nnetdir/num_jobs
 nnet_plice_opts=`cat $nnetdir/nnet_splice_opts 2>/dev/null`
-splice_opts=`cat $nnetdir/splice_opts 2>/dev/null`
-cmvn_opts=`cat $nnetdir/cmvn_opts 2>/dev/null`
-[[ -d $sdata && $data/feats.scp -ot $sdata ]] || split_data.sh $data $nj || exit 1;
 
-## Set up input features of nnet
-if [ -f $nnetdir/final.mat ]; then feat_type=lda; else feat_type=raw; fi
-echo "$0: feature type is $feat_type"
+[[ -d $sdata && $data/feats.scp -ot $sdata ]] || utils/split_data.sh $data $nj || exit 1;
 
-case $feat_type in
-    raw) feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- |";;
-    delta) feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | add-deltas ark:- ark:- |";;
-    lda) feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | splice-feats $splice_opts ark:- ark:- | transform-feats $nnetdir/final.mat ark:- ark:- |"
-        ;;
-    *) echo "Invalid feature type $feat_type" && exit 1;
-esac
+echo "${feat}" > $dir/feat_opt
+feats=$(echo ${feat} | sed -s 's#SDATA_JOB#'${sdata}'/JOB#g')
+echo "${feats}" >$dir/feat_string # keep track of feature type 
+
 
 if [ ! -z "$transform_dir" ]; then
     echo "Using transforms from $transform_dir"

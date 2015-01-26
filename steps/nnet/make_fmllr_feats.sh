@@ -11,6 +11,7 @@
 nj=4
 cmd=run.pl
 transform_dir=
+feat=
 # End configuration section.
 
 echo "$0 $@"  # Print the command line for logging
@@ -41,22 +42,19 @@ logdir=$4
 feadir=$5
 
 sdata=$srcdata/split$nj;
-splice_opts=`cat $gmmdir/splice_opts 2>/dev/null` # frame-splicing options.
-cmvn_opts=`cat $gmmdir/cmvn_opts 2>/dev/null`
 
 mkdir -p $data $logdir $feadir
 [[ -d $sdata && $srcdata/feats.scp -ot $sdata ]] || split_data.sh $srcdata $nj || exit 1;
 
-for f in $sdata/1/feats.scp $sdata/1/cmvn.scp; do
+for f in $sdata/1/feats.scp ; do
 	[ ! -f $f ] && echo "$0: no such file $f" && exit 1;
 done
 
-# for tracking the feat-type
-src_dir=$gmmdir
-dest_dir=$data
-. steps/feat_track.sh
-feats=$org_feats
-echo "feat_type : ${feat_type}"
+## Set up features. 
+echo "${feat}" > $dir/feat_opt
+feats=$(echo ${feat} | sed -s 's#SDATA_JOB#'${sdata}'/JOB#g')
+echo "${feats}" >$dir/feat_string # keep track of feature type 
+
 if [ ! -z "$transform_dir" ]; then # add transforms to features...
 	echo "Using fMLLR transforms from $transform_dir"
 	[ ! -f $transform_dir/trans.1 ] && echo "Expected $transform_dir/trans.1 to exist." && exit 1
@@ -64,7 +62,7 @@ if [ ! -z "$transform_dir" ]; then # add transforms to features...
 fi
 
 # prepare the dir
-cp $srcdata/* $data 2>/dev/null; rm $data/{feats,cmvn}.scp;
+cp $srcdata/* $data 2>/dev/null; rm $data/feats.scp;
 
 # make $bnfeadir an absolute pathname.
 feadir=`perl -e '($dir,$pwd)= @ARGV; if($dir!~m:^/:) { $dir = "$pwd/$dir"; } print $dir; ' $feadir ${PWD}`

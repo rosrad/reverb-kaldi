@@ -12,19 +12,18 @@
 
 # Begin configuration section.  
 nj=4
-cmd=run.pl
+cmd=utils/run.pl
 use_graphs=false
 # Begin configuration.
 scale_opts="--transition-scale=1.0 --acoustic-scale=0.1 --self-loop-scale=0.1"
 beam=10
 retry_beam=40
 boost_silence=1.0 # Factor by which to boost silence during alignment.
-feat_type=
+feat=
 # End configuration options.
 
 echo "$0 $@"  # Print the command line for logging
 
-[ -f path.sh ] && . ./path.sh # source the path.
 . parse_options.sh || exit 1;
 
 if [ $# != 4 ]; then
@@ -43,6 +42,7 @@ lang=$2
 srcdir=$3
 dir=$4
 
+
 oov=`cat $lang/oov.int` || exit 1;
 mkdir -p $dir/log
 echo $nj > $dir/num_jobs
@@ -52,18 +52,14 @@ cp $srcdir/splice_opts $dir 2>/dev/null # frame-splicing options.
 cmvn_opts=`cat $srcdir/cmvn_opts 2>/dev/null`
 cp $srcdir/cmvn_opts $dir 2>/dev/null # cmn/cmvn option.
 
-[[ -d $sdata && $data/feats.scp -ot $sdata ]] || split_data.sh $data $nj || exit 1;
+[[ -d $sdata && $data/feats.scp -ot $sdata ]] || utils/split_data.sh $data $nj || exit 1;
 
 cp $srcdir/{tree,final.mdl} $dir || exit 1;
 cp $srcdir/final.occs $dir;
 
-# for tracking the feat-type
-# call it like a function , because bash can not return string ,we do like this
-src_dir=$srcdir
-dest_dir=$dir
-. steps/feat_track.sh
-feats=$org_feats
-echo "$0: feature type is $feat_type"
+echo "${feat}" > $dir/feat_opt
+feats=$(echo ${feat} | sed -s 's#SDATA_JOB#'${sdata}'/JOB#g')
+echo "${feats}" >$dir/feat_string # keep track of feature type 
 
 echo "$0: aligning data in $data using model from $srcdir, putting alignments in $dir"
 

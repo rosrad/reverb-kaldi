@@ -5,7 +5,7 @@
 # Apache 2.0.
 
 # Begin configuration.
-cmd=run.pl
+cmd=utils/run.pl
 config=
 stage=-5
 scale_opts="--transition-scale=1.0 --acoustic-scale=0.1 --self-loop-scale=0.1"
@@ -26,6 +26,7 @@ norm_vars=false # false : cmn, true : cmvn
 # End configuration.
 train_tree=true  # if false, don't actually train the tree.
 use_lda_mat=  # If supplied, use this LDA[+MLLT] matrix.
+feat=
 
 echo "$0 $@"  # Print the command line for logging
 
@@ -62,19 +63,13 @@ ciphonelist=`cat $lang/phones/context_indep.csl` || exit 1;
 
 mkdir -p $dir/log
 echo $nj >$dir/num_jobs
-echo "$splice_opts" >$dir/splice_opts # keep track of frame-splicing options
-# so that later stages of system building can know what they were.
-
-# echo $norm_vars > $dir/norm_vars # keep track of feature normalization type
-# so that later stages of system building can know what they were.
-$norm_vars && cmvn_opts="--norm-vars=true $cmvn_opts"
-echo $cmvn_opts > $dir/cmvn_opts # keep track of options to CMVN.
-
 
 sdata=$data/split$nj;
-split_data.sh $data $nj || exit 1;
+utils/split_data.sh $data $nj || exit 1;
 
-feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | add-deltas ark:- ark:- | splice-feats $splice_opts ark:- ark:- |"
+echo "${feat}" > $dir/feat_opt
+feats=$(echo ${feat} | sed -s 's#SDATA_JOB#'${sdata}'/JOB#g')
+echo "${feats}" >$dir/feat_string # keep track of feature type 
 
 
 if [ $stage -le -4 ] && $train_tree; then

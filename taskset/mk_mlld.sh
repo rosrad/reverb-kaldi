@@ -82,7 +82,7 @@ export FEAT_TYPE=mfcc
 . local/am_util.sh
 export AUTOSEL=${WORKSPACE}/auto_select
 export FEAT_AUTOSEL=${AUTOSEL}/${FEAT_TYPE}
-export AUTOSEL_TARGET="PHONE_MLLD_dt"
+export AUTOSEL_TARGET="PHONEMLLD_dt"
 export AUTOSEL_SOURCE="PHONE_dt"
 
 selection

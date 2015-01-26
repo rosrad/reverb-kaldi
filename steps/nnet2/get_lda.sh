@@ -6,9 +6,8 @@
 # the validation examples used for diagnostics), and puts them in separate archives.
 
 # Begin configuration section.
-cmd=run.pl
-
-feat_type=
+cmd=utils/run.pl
+feat=
 stage=0
 splice_width=4 # meaning +- 4 frames on each side for second LDA
 rand_prune=4.0 # Relates to a speedup we do for LDA.
@@ -18,7 +17,6 @@ transform_dir=     # If supplied, overrides alidir
 num_feats=10000 # maximum number of feature files to use.  Beyond a certain point it just
 # gets silly to use more data.
 lda_dim=  # This defaults to no dimension reduction.
-
 echo "$0 $@"  # Print the command line for logging
 
 if [ -f path.sh ]; then . ./path.sh; fi
@@ -52,7 +50,6 @@ for f in $data/feats.scp $lang/L.fst $alidir/ali.1.gz $alidir/final.mdl $alidir/
     [ ! -f $f ] && echo "$0: no such file $f" && exit 1;
 done
 
-
 # Set some variables.
 oov=`cat $lang/oov.int`
 num_leaves=`gmm-info $alidir/final.mdl 2>/dev/null | awk '/number of pdfs/{print $NF}'` || exit 1;
@@ -68,8 +65,6 @@ echo $nj > $dir/num_jobs
 cp $alidir/tree $dir
 
 [ -z "$transform_dir" ] && transform_dir=$alidir
-cmvn_opts=`cat $alidir/cmvn_opts 2>/dev/null`
-cp $alidir/cmvn_opts $dir 2>/dev/null
 
 ## Set up features.  Note: these are different from the normal features
 ## because we have one rspecifier that has the features for the entire
@@ -81,13 +76,17 @@ cp $alidir/cmvn_opts $dir 2>/dev/null
 # way too much, but for small datasets this phase is quite fast.
 
 N=$[$num_feats/$nj]
-# for tracking the feat-type
-src_dir=$alidir
-dest_dir=$dir
-. steps/feat_track.sh
-feats=$(echo $org_feats | sed 's#ark,s,cs:#ark,s,cs:utils/subset_scp.pl --quiet '"$N $sdata"'/JOB/feats.scp | #g' \
+
+echo "${feat}" > $dir/feat_opt
+feats=$(echo ${feat} | sed -s 's#SDATA_JOB#'${sdata}'/JOB#g')
+echo "${feats}" >$dir/feat_string # keep track of feature type 
+
+
+feats=$(echo $feats | sed 's#ark,s,cs:#ark,s,cs:utils/subset_scp.pl --quiet '"$N $sdata"'/JOB/feats.scp | #g' \
     | sed 's#scp:'$sdata'/JOB/feats.scp#scp:-#')
 echo "$0: feature type is $feat_type"
+echo "$0: feature is  ${feats}"
+
 
 if [ -f $transform_dir/trans.1 ] && [ ${feat_type/lda/} != ${feat_type} ]; then
     echo "$0: using transforms from $transform_dir"

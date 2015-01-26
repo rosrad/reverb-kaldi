@@ -66,6 +66,7 @@ echo "###### $dt_or_x"
 
 case $dt_or_x in
     tr)taskFiles=$(ls $taskFileDir/SimData_tr_for_*);;
+    et)taskFiles=$(ls $taskFileDir/${datatype}_${dt_or_x}_for*);;
     dt)taskFiles=$(ls $taskFileDir/${datatype}_${dt_or_x}_for*);;
     phone)taskFiles=$(ls $taskFileDir/Phone_dt_for*); dt_or_x=dt;;
     phone_sel)taskFiles=$(ls $taskFileDir/PhoneSel_dt_for*); dt_or_x=dt;;
@@ -121,6 +122,6 @@ perl $local/find_transcripts_singledot.pl $dot \
     #for x in test_eval92_clean test_eval92_5k_clean dev_dt_05_clean dev_dt_20_clean train_si84_clean; do 
     #for x in si_tr; do 
     steps/make_mfcc.sh --nj $nj_decode \
-        ${MFCC_DATA}/$dataset/$set ${FEAT_LOG}/make_feats/$dataset/$set ${MFCC_MDL_PARAM}/$dataset/$set || exit 1;
-    steps/compute_cmvn_stats.sh ${MFCC_DATA}/$dataset/$set ${FEAT_LOG}/make_feats/$dataset/$set ${MFCC_MDL_PARAM}/$dataset/$set || exit 1;
+        ${MFCC_DATA}/$dataset/$set ${MFCC_LOG}/make_feats/$dataset/$set ${MFCC_MDL_PARAM}/$dataset/$set || exit 1;
+    steps/compute_cmvn_stats.sh ${MFCC_DATA}/$dataset/$set ${MFCC_LOG}/make_feats/$dataset/$set ${MFCC_MDL_PARAM}/$dataset/$set || exit 1;
 done

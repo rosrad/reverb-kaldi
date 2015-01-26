@@ -15,7 +15,7 @@
 # Begin configuration section.  
 stage=0
 nj=4
-cmd=run.pl
+cmd=utils/run.pl
 use_graphs=false
 # Begin configuration.
 scale_opts="--transition-scale=1.0 --acoustic-scale=0.1 --self-loop-scale=0.1"
@@ -47,28 +47,24 @@ lang=$2
 srcdir=$3
 dir=$4
 
+echo "$0 $@" > $dir/cmd
+
 oov=`cat $lang/oov.int` || exit 1;
 silphonelist=`cat $lang/phones/silence.csl` || exit 1;
 sdata=$data/split$nj
 
 mkdir -p $dir/log
 echo $nj > $dir/num_jobs
-[[ -d $sdata && $data/feats.scp -ot $sdata ]] || split_data.sh $data $nj || exit 1;
+[[ -d $sdata && $data/feats.scp -ot $sdata ]] || utils/split_data.sh $data $nj || exit 1;
 
 cp $srcdir/{tree,final.mdl} $dir || exit 1;
 cp $srcdir/final.occs $dir;
-splice_opts=`cat $srcdir/splice_opts 2>/dev/null` # frame-splicing options.
-cp $srcdir/splice_opts $dir 2>/dev/null # frame-splicing options.
-cmvn_opts=`cat $srcdir/cmvn_opts 2>/dev/null`
-cp $srcdir/cmvn_opts $dir 2>/dev/null # cmn/cmvn option.
 
 # for tracking the feat-type
 # call it like a function , because bash can not return string ,we do like this
-src_dir=$srcdir
-dest_dir=$dir
-. steps/feat_track.sh
-sifeats=$org_feats
-echo "$0: feature type is $feat_type"
+echo "${feat}" > $dir/feat_opt
+feats=$(echo ${feat} | sed -s 's#SDATA_JOB#'${sdata}'/JOB#g')
+echo "${feats}" >$dir/feat_string # keep track of feature type 
 
 
 ## Set up model and alignment model.

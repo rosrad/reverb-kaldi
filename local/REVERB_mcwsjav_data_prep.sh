@@ -16,22 +16,20 @@
 # See the Apache 2 License for the specific language governing permissions and
 # limitations under the License.
 
+. check.sh
 
-# for REVERB challenge:
-
-dir=`pwd`/data/local/data
-lmdir=`pwd`/data/local/nist_lm
+dir=$(readlink -f ${DATA})/local/data
+lmdir=$(readlink -f ${DATA})/local/nist_lm
 mkdir -p $dir $lmdir
 local=`pwd`/local
 utils=`pwd`/utils
 root=`pwd`
-
-. ./path.sh # Needed for KALDI_ROOT
+taskFileDir=$(readlink -f $TASKFILES)
 export PATH=$PATH:$KALDI_ROOT/tools/irstlm/bin
 sph2pipe=$KALDI_ROOT/tools/sph2pipe_v2.5/sph2pipe
 if [ ! -x $sph2pipe ]; then
-   echo "Could not find (or execute) the sph2pipe program at $sph2pipe";
-   exit 1;
+    echo "Could not find (or execute) the sph2pipe program at $sph2pipe";
+    exit 1;
 fi
 
 cd $dir
@@ -51,47 +49,46 @@ if [ ! -z "$4" ]; then
 fi
 
 # the name of the dataset to be created
-dataset=REVERB_Real_dt
+dataset=REVERB_REAL_dt
 
 # the WSJCAM0 set that the set is based on (tr, dt, ...)
 # this will be used to find the correct transcriptions etc.
 dt_or_x=dt
 
 if [ ! -z "$2" ]; then
-   dataset=$2
+    dataset=$2
 fi
 # dt or et
 if [ ! -z "$3" ]; then
-   dt_or_x=$3
+    dt_or_x=$3
 fi
 
 # unfortunately, we need a pointer to HTK baseline 
 # since the corpus does NOT contain the data set descriptions 
 # for the REVERB Challenge
-
-taskFileDir=$REVERB_ASR_ROOT/taskFiles/1ch
+# taskFileDir=$REVERB_ASR_ROOT/taskFiles_all/1ch
 #taskFiles=`ls $taskFileDir/*Data_dt_for_*`
-taskFiles=`ls $taskFileDir/RealData_${dt_or_x}_for_1ch_{far,near}*`
+taskFiles=`ls $taskFileDir/RealData_${dt_or_x}_for_{far,near}*`
 
 dir2=$dir/$dataset
 mkdir -p $dir2
 
 for taskFile in $taskFiles; do
 
-set=`basename $taskFile`
+    set=`basename $taskFile`
 
 
-echo $mcwsjav_mlf
+    echo $mcwsjav_mlf
 
-# MLF transcription correction
-# taken from HTK baseline script
-sed -e '
+    # MLF transcription correction
+    # taken from HTK baseline script
+    sed -e '
 # dos to unix line feed conversion
 s/\x0D$//' \
--e "
+    -e "
             s/\x60//g              # remove unicode character grave accent.
        " \
--e "
+           -e "
             # fix the single quote for the word yield
             # and the quoted ROOTS
             # e.g. yield' --> yield
@@ -103,7 +100,7 @@ s/\x0D$//' \
             s/SIT'/SIT/g
             s/'DOMINEE/DOMINEE/g 
             s/CHURCH'/CHURCH/g" \
--e '
+                -e '
               # fix the single missing double full stop issue at the end of an utterance
               # e.g. I. C. N should be  I. C. N.
               # reason: N is not in dict, while N. is
@@ -116,50 +113,54 @@ s/\x0D$//' \
                               s/\([A-Z]\)\n\./\1\.\n\./
                       }
               }' \
-$mcwsjav_mlf |\
+                  $mcwsjav_mlf |\
 perl $utils/mlf2text.pl > $dir2/$set.txt1
 
-#exit
+    #exit
 
-#taskFile=$taskFileDir/$set
-# contains pointer to wav files with relative path --> add absolute path
-echo taskFile = $taskFile
-awk '{print "'$RWSJ'"$1}' < $taskFile > $dir2/${set}.flist || exit 1;
+    #taskFile=$taskFileDir/$set
+    # contains pointer to wav files with relative path --> add absolute path
+    echo taskFile = $taskFile
+    awk '{print "'$RWSJ'"$1}' < $taskFile > $dir2/${set}.flist || exit 1;
 
-# this is like flist2scp.pl but it can take wav file list as input
-(perl -e 'while(<>){
+    # this is like flist2scp.pl but it can take wav file list as input
+    (perl -e 'while(<>){
     m:^\S+/[\w\-]*_(T\w{6,7})\.wav$: || die "Bad line $_";
     $id = lc $1;
     print "$id $_";
 }' < $dir2/$set.flist || exit 1) | sort > $dir2/${set}_wav.scp
 
 
-# Make the utt2spk and spk2utt files.
-cat $dir2/${set}_wav.scp | awk '{print $1, $1}' > $dir2/$set.utt2spk || exit 1;
-cat $dir2/$set.utt2spk | $utils/utt2spk_to_spk2utt.pl > $dir2/$set.spk2utt || exit 1;
+    # Make the utt2spk and spk2utt files.
+    # cat $dir2/${set}_wav.scp | awk '{print $1, $1}' > $dir2/$set.utt2spk || exit 1;
+    cat $dir2/${set}_wav.scp | awk '{print $1, substr($1,0,3)}' > $dir2/$set.utt2spk || exit 1;
+    cat $dir2/$set.utt2spk | $utils/utt2spk_to_spk2utt.pl > $dir2/$set.spk2utt || exit 1;
 
-awk '{print $1}' < $dir2/$set.utt2spk |\
+    awk '{print $1}' < $dir2/$set.utt2spk |\
 $local/find_transcripts_txt.pl $dir2/$set.txt1 > $dir2/$set.txt
-#rm $dir2/$set.txt1
+    #rm $dir2/$set.txt1
 
-# Create directory structure required by decoding scripts
+    # Create directory structure required by decoding scripts
 
-cd $root
-mkdir -p data/$dataset/$set
-cp $dir2/${set}_wav.scp data/$dataset/$set/wav.scp || exit 1;
-cp $dir2/$set.txt data/$dataset/$set/text || exit 1;
-cp $dir2/$set.spk2utt data/$dataset/$set/spk2utt || exit 1;
-cp $dir2/$set.utt2spk data/$dataset/$set/utt2spk || exit 1;
+    cd $root
+    mkdir -p ${MFCC_DATA}/$dataset/$set
+    cp $dir2/${set}_wav.scp ${MFCC_DATA}/$dataset/$set/wav.scp || exit 1;
+    cp $dir2/$set.txt ${MFCC_DATA}/$dataset/$set/text || exit 1;
+    cp $dir2/$set.spk2utt ${MFCC_DATA}/$dataset/$set/spk2utt || exit 1;
+    cp $dir2/$set.utt2spk ${MFCC_DATA}/$dataset/$set/utt2spk || exit 1;
 
-echo "Data preparation for $set succeeded"
-#echo "Put files into $dir2/$set.*"
+    echo "Data preparation for $set succeeded"
+    #echo "Put files into $dir2/$set.*"
 
 
-mfccdir=mfcc/$dataset
-#for x in test_eval92_clean test_eval92_5k_clean dev_dt_05_clean dev_dt_20_clean train_si84_clean; do 
-#for x in si_tr; do 
-steps/make_mfcc.sh --nj 10 \
-  data/$dataset/$set exp/make_mfcc/$dataset/$set $mfccdir || exit 1;
-steps/compute_cmvn_stats.sh data/$dataset/$set exp/make_mfcc/$dataset/$set $mfccdir || exit 1;
+    mfccdir=mfcc/$dataset
+    #for x in test_eval92_clean test_eval92_5k_clean dev_dt_05_clean dev_dt_20_clean train_si84_clean; do 
+    #for x in si_tr; do 
+    # steps/make_mfcc.sh --nj 10 \
+    #     ${MFCC_DATA}/$dataset/$set exp/make_mfcc/$dataset/$set $mfccdir || exit 1;
+    # steps/compute_cmvn_stats.sh ${MFCC_DATA}/$dataset/$set exp/make_mfcc/$dataset/$set $mfccdir || exit 1;
+    steps/make_mfcc.sh --nj $nj_decode \
+        ${MFCC_DATA}/$dataset/$set ${MFCC_LOG}/make_feats/$dataset/$set ${MFCC_MDL_PARAM}/$dataset/$set || exit 1;
+    steps/compute_cmvn_stats.sh ${MFCC_DATA}/$dataset/$set ${MFCC_LOG}/make_feats/$dataset/$set ${MFCC_MDL_PARAM}/$dataset/$set || exit 1;
 
 done

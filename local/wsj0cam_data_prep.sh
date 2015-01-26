@@ -17,7 +17,6 @@
 # limitations under the License.
 
 . check.sh
-
 dir=$(readlink -f ${DATA})/local/data
 lmdir=$(readlink -f ${DATA})/local/nist_lm
 mkdir -p $dir $lmdir
@@ -50,8 +49,8 @@ fi
 # so that it can be processed in analogy to si_dt for SimData_dt.
 
 # concatenate dt / et transcription
-# for set in si_dt si_et_1 si_et_2; do
-for set in si_dt ; do
+for set in si_dt si_et_1 si_et_2; do
+# for set in si_dt ; do
     # this can be done as in the htk baseline
     if [[ "$set" =~ et ]]; then
         find $WSJ/data/{primary,secondary}_microphone/$set -name '*.wv1' | sort > $set.flist
@@ -64,7 +63,7 @@ for set in si_dt ; do
     find $WSJ/data/*/$set -type f -name '*.dot' \
         | xargs cat > $dir/$set.dot
 done
-# cat $dir/si_et_1.dot $dir/si_et_2.dot > $dir/si_et.dot
+cat $dir/si_et_1.dot $dir/si_et_2.dot > $dir/si_et.dot
 
 # for si_tr we need the transcribed utterances (not all)
 si_tr_dot=$WSJ/data/primary_microphone/etc/si_tr.dot
@@ -88,7 +87,7 @@ echo "si_tr: $nl files"
 for x in si_tr si_dt ; do
     $local/flist2scp.pl $x.flist | sort > ${x}_sph.scp
 done
-# cat si_et_{1,2}_sph.scp > si_et_sph.scp
+cat si_et_{1,2}_sph.scp > si_et_sph.scp
 
 # for WSJCAM0 training set, there's only one transcript file which contains all training speakers
 
@@ -96,7 +95,7 @@ done
 $local/convert_transcripts.pl $si_tr_dot > si_tr.trans1 || exit 1
 
 $local/convert_transcripts.pl $dir/si_dt.dot > si_dt.trans1 || exit 1
-# $local/convert_transcripts.pl $dir/si_et.dot > si_et.trans1 || exit 1
+$local/convert_transcripts.pl $dir/si_et.dot > si_et.trans1 || exit 1
 
 
 # Do some basic normalization steps.  At this point we don't remove OOVs--

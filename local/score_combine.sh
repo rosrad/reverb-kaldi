@@ -23,7 +23,7 @@
 # utils/ since the scores on the combined lattice must not be scaled.
 
 # begin configuration section.
-cmd=run.pl
+cmd=utils/run.pl
 min_lmwt=9
 max_lmwt=20
 lat_weights=

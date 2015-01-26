@@ -7,10 +7,9 @@ export REVERB_ASR_ROOT=/home/14/ren/exp/
 
 # the PATH about some subset scripts
 export HOME=.
-export WORKSPACE=${HOME}/tmp
+export WORKSPACE=${HOME}/cut-mslp-tmp/
 export CONF=${HOME}/config
 #config and taskfile
-export TASKFILES=$CONF/taskFiles
 # script directory alias
 export LOCAL=${HOME}/local
 export UTILS=${HOME}/utils

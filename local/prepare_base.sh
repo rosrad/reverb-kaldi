@@ -3,7 +3,7 @@
 . check.sh
 # Prepare clean data and language model.
 local/wsj0cam_data_prep.sh $wsj0cam $reverb_lm || exit 1
-
+exit 0
 # Prepare merged BEEP/CMU dictionary.
 local/wsj_prepare_beep_dict.sh || exit 1;
 

@@ -6,7 +6,7 @@
 # Begin configuration.
 stage=-4 #  This allows restarting after partway, when something when wrong.
 config=
-cmd=run.pl
+cmd=utils/run.pl
 scale_opts="--transition-scale=1.0 --acoustic-scale=0.1 --self-loop-scale=0.1"
 realign_iters="10 20 30";
 num_iters=35    # Number of iterations of training
@@ -16,10 +16,7 @@ retry_beam=40
 boost_silence=1.0 # Factor by which to boost silence likelihoods in alignment
 power=0.25 # Exponent for number of gaussians according to occurrence counts
 cluster_thresh=-1  # for build-tree control final bottom-up clustering of leaves
-norm_vars=false # deprecated.  Prefer --cmvn-opts "--norm-vars=true"
-# use the option --cmvn-opts "--norm-means=false"
-cmvn_opts=
-feat_type=
+feat=
 # End configuration.
 
 echo "$0 $@"  # Print the command line for logging
@@ -44,6 +41,7 @@ lang=$4
 alidir=$5
 dir=$6
 
+
 for f in $alidir/final.mdl $alidir/ali.1.gz $data/feats.scp $lang/phones.txt; do
     [ ! -f $f ] && echo "train_deltas.sh: no such file $f" && exit 1;
 done
@@ -57,25 +55,11 @@ mkdir -p $dir/log
 echo $nj > $dir/num_jobs
 
 sdata=$data/split$nj;
-split_data.sh $data $nj || exit 1;
+utils/split_data.sh $data $nj || exit 1;
 
-
-[ $(cat $alidir/cmvn_opts 2>/dev/null | wc -c) -gt 1 ] && [ -z "$cmvn_opts" ] && \
-    echo "$0: warning: ignoring CMVN options from source directory $alidir"
-$norm_vars && cmvn_opts="--norm-vars=true $cmvn_opts"
-echo $cmvn_opts  > $dir/cmvn_opts # keep track of options to CMVN.
-
-[[ -z ${feat_type} ]] && feat_type=delta
-echo "$0: feature type is $feat_type"
-## Set up speaker-independent features.
-case $feat_type in
-    raw) feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- |"
-        ;;
-    delta) feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | add-deltas ark:- ark:- |"
-        ;;
-    *) echo "$0: invalid feature type $feat_type" && exit 1;
-esac
-echo "${feat_type}" >$dir/feat_type # keep track of feature type 
+echo "${feat}" > $dir/feat_opt
+feats=$(echo ${feat} | sed -s 's#SDATA_JOB#'${sdata}'/JOB#g')
+echo "${feats}" >$dir/feat_string # keep track of feature type 
 
 rm $dir/.error 2>/dev/null
 
