@@ -7,3 +7,5 @@ res/
 NOISE
 RIR
 script/
+kaldi
+kaldi-tools
