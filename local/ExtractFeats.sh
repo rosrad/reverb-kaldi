@@ -16,6 +16,14 @@
 #local/REVERB_mcwsjav_data_prep.sh $cut_mslp_data REVERB_REAL_dt dt $reverb_real_dt/mlf/WSJ.mlf 
 
 
-local/REVERB_wsjcam0_data_prep.sh $mslp_data REVERB_tr_cut tr 
-local/REVERB_wsjcam0_data_prep.sh $mslp_data REVERB_dt dt 
-local/REVERB_mcwsjav_data_prep.sh $mslp_data REVERB_REAL_dt dt $reverb_real_dt/mlf/WSJ.mlf
+# local/REVERB_wsjcam0_data_prep.sh $mslp_data REVERB_tr_cut tr 
+# local/REVERB_wsjcam0_data_prep.sh $mslp_data REVERB_dt dt 
+# local/REVERB_mcwsjav_data_prep.sh $mslp_data REVERB_REAL_dt dt $reverb_real_dt/mlf/WSJ.mlf
+
+# local/REVERB_wsjcam0_data_prep.sh $mslp_cut_data REVERB_tr_cut tr 
+# local/REVERB_wsjcam0_data_prep.sh $mslp_cut_data REVERB_dt dt 
+# local/REVERB_mcwsjav_data_prep.sh $mslp_cut_data REVERB_REAL_dt dt $reverb_real_dt/mlf/WSJ.mlf
+
+local/REVERB_wsjcam0_data_prep.sh $cur_mc_data REVERB_tr_cut tr 
+local/REVERB_wsjcam0_data_prep.sh $cur_mc_data REVERB_dt dt 
+local/REVERB_mcwsjav_data_prep.sh $cur_mc_data REVERB_REAL_dt dt $reverb_real_dt/mlf/WSJ.mlf
