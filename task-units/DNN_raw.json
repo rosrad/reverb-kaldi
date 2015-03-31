@@ -1,0 +1,1 @@
+{"Dst":{"Name":"tri1.cmn","Exp":"DNN","Feat":"mfcc","Label":"normal"},"Dynamic":"raw","MC":true,"Norm":{"Cmvn":{"Vars":false}},"Src":{"Name":"tri1.cmn","Exp":"GMM","Feat":"mfcc","Label":"normal"},"DnnConf":{"MinBatch":256,"Jobs":16,"Nodes":500,"Layers":2,"Context":4,"Gpu":true},"TaskConf":{"Btrain":true,"Bgraph":true,"Bdecode":true,"Bscore":true}}

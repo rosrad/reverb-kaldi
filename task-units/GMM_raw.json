@@ -1,0 +1,1 @@
+{"Dst":{"Name":"tri1.cmn","Exp":"GMM","Feat":"mfcc","Label":"normal"},"Src":{"Name":"mono","Exp":"GMM","Feat":"mfcc","Label":"normal"},"MC":true,"TaskConf":{"Btrain":true,"Bdecode":true,"Bscore":true}}
