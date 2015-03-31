@@ -1,1 +1,1 @@
-{"Name":"tri1.cmn","Exp":"GMM","Feat":"bnf","Label":"tri1.cmn.raw.perutt","Dynamic":"raw","Norm":{"Method":"cmvn","Cmvn":{"Vars":false}},"MC":true}
+{"Dst":{"Exp":"DNN","Feat":"bnf","Label":"tri1.cmn.raw.perutt.500.gmmali.35"},"BottleDim":35,"MC":true,"Dynamic":"raw","Norm":{"Cmvn":{"PerUtt":true,"Vars":false}},"Src":{"Name":"tri1.cmn","Exp":"GMM","Feat":"mfcc","Label":"normal"},"DnnConf":{"MinBatch":256,"Jobs":8,"Layers":5,"Nodes":500,"Context":4,"Gpu":true},"Btrain":true,"Bdecode":true,"Bscore":false}

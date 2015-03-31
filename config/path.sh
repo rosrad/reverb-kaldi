@@ -7,7 +7,7 @@ export REVERB_ASR_ROOT=/home/14/ren/exp/
 
 # the PATH about some subset scripts
 export HOME=.
-export WORKSPACE=${HOME}/shiota-ssmslp-tmp/
+export WORKSPACE=${HOME}/shiota-mslp-cut-tmp/
 export CONF=${HOME}/config
 #config and taskfile
 # script directory alias

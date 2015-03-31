@@ -1,2 +1,0 @@
-{"Dst":{"Name":"tri1.cmn","Exp":"GMM","Feat":"bnf","Label":"tri1.cmn.raw.perutt"},"Dynamic":"raw","Norm":{"Method":"cmvn","Cmvn":{"Vars":false}},"Src":{"Name":"tri1.cmn","Exp":"GMM","Feat":"mfcc","Label":"normal"},"TaskConf":{"Btrain":true,"Bdecode":true,"Bscore":true}}
-{"Dst":{"Name":"tri1.cmn","Exp":"GMM","Feat":"bnf","Label":"tri1.cmn.raw.perutt"},"Dynamic":"raw","Norm":{"Method":"cmvn","Cmvn":{"Vars":false}},"Src":{"Name":"tri1.cmn","Exp":"GMM","Feat":"mfcc","Label":"tri1.cmn.raw.perutt","TaskConf":{"Btrain":true,"Bdecode":true,"Bscore":true}}

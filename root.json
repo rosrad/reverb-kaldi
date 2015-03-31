@@ -1,3 +1,5 @@
+{"Root":"tmp","LM":"bg","DecodeSet":"eval_all","Btrain":false,"Bgraph":false,"Bdecode":true,"Bscore":true}
+{"Root":"tmp","LM":"bg","DecodeSet":"dev","Btrain":false,"Bgraph":false,"Bdecode":true,"Bscore":true}
 {"Root":"tmp","LM":"bg","Btrain":true,"Bgraph":true,"Bdecode":true,"Bscore":true}
 {"Root":"tmp","LM":"bg","DecodeSet":"dev_real","Btrain":false,"Bgraph":false,"Bdecode":true,"Bscore":true}
 {"Root":"tmp","LM":"tg","Btrain":false,"Bgraph":true,"Bdecode":true,"Bscore":true}
