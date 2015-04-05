@@ -12,7 +12,7 @@ srcdir=             # non-default location of DNN-dir (decouples model dir from 
 
 stage=0 # stage=1 skips lattice generation
 nj=4
-cmd=run.pl
+cmd=utils/run.pl
 
 acwt=0.10 # note: only really affects pruning (scoring is on lattices).
 beam=13.0
@@ -27,6 +27,7 @@ scoring_opts="--min-lmwt 4 --max-lmwt 15"
 num_threads=1 # if >1, will use latgen-faster-parallel
 parallel_opts="-pe smp $((num_threads+1))" # use 2 CPUs (1 DNN-forward, 1 decoder)
 use_gpu="no" # yes|no|optionaly
+feat=
 # End configuration section.
 
 echo "$0 $@"  # Print the command line for logging
@@ -68,7 +69,7 @@ sdata=$data/split$nj;
 
 mkdir -p $dir/log
 
-[[ -d $sdata && $data/feats.scp -ot $sdata ]] || split_data.sh $data $nj || exit 1;
+[[ -d $sdata && $data/feats.scp -ot $sdata ]] || utils/split_data.sh $data $nj || exit 1;
 echo $nj > $dir/num_jobs
 
 # Select default locations to model files (if not already set externally)
@@ -89,18 +90,23 @@ thread_string=
 
 # PREPARE FEATURE EXTRACTION PIPELINE
 # Create the feature stream:
-feats="ark,s,cs:copy-feats scp:$sdata/JOB/feats.scp ark:- |"
+# feats="ark,s,cs:copy-feats scp:$sdata/JOB/feats.scp ark:- |"
+
+echo "${feat}" > $dir/feat_opt
+feats=$(echo ${feat} | sed -s 's#SDATA_JOB#'${sdata}'/JOB#g')
+echo "${feats}" >$dir/feat_string # keep track of feature type 
+
 # Optionally add cmvn
-if [ -f $srcdir/norm_vars ]; then
-  norm_vars=$(cat $srcdir/norm_vars 2>/dev/null)
-  [ ! -f $sdata/1/cmvn.scp ] && echo "$0: cannot find cmvn stats $sdata/1/cmvn.scp" && exit 1
-  feats="$feats apply-cmvn --norm-vars=$norm_vars --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp ark:- ark:- |"
-fi
-# Optionally add deltas
-if [ -f $srcdir/delta_order ]; then
-  delta_order=$(cat $srcdir/delta_order)
-  feats="$feats add-deltas --delta-order=$delta_order ark:- ark:- |"
-fi
+# if [ -f $srcdir/norm_vars ]; then
+#   norm_vars=$(cat $srcdir/norm_vars 2>/dev/null)
+#   [ ! -f $sdata/1/cmvn.scp ] && echo "$0: cannot find cmvn stats $sdata/1/cmvn.scp" && exit 1
+#   feats="$feats apply-cmvn --norm-vars=$norm_vars --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp ark:- ark:- |"
+# fi
+# # Optionally add deltas
+# if [ -f $srcdir/delta_order ]; then
+#   delta_order=$(cat $srcdir/delta_order)
+#   feats="$feats add-deltas --delta-order=$delta_order ark:- ark:- |"
+# fi
 
 # Run the decoding in the queue
 if [ $stage -le 0 ]; then

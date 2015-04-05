@@ -28,7 +28,7 @@
 # Begin configuration.
 #
 # nnet config
-nn_depth=6     #number of hidden layers
+hid_layers=6     #number of hidden layers
 hid_dim=2048   #number of units per layer
 param_stddev_first=0.1 #init parameters in 1st RBM
 param_stddev=0.1 #init parameters in other RBMs
@@ -41,19 +41,21 @@ rbm_lrate_low=0.01    #lower RBM learning rate (for Gaussian units)
 rbm_l2penalty=0.0002  #L2 penalty (increases RBM-mixing rate)
 rbm_extra_opts=
 # data processing config
-copy_feats=true    # resave the features randomized consecutively to tmpdir
+# copy_feats=true    # resave the features randomized consecutively to tmpdir
 # feature config
 feature_transform= # Optionally reuse feature processing front-end (override splice,etc.)
 feature_transform_proto= # Optionally pass prototype of feature transform
-delta_order=       # Optionally use deltas on the input features
-apply_cmvn=false   # Optionally do CMVN of the input features
-norm_vars=false    # When apply_cmvn=true, this enables CVN
+# delta_order=       # Optionally use deltas on the input features
+# apply_cmvn=false   # Optionally do CMVN of the input features
+# norm_vars=false
 splice=5           # Temporal splicing
 splice_step=1      # Stepsize of the splicing (1 is consecutive splice, 
-                   # value 2 would do [ -10 -8 -6 -4 -2 0 2 4 6 8 10 ] splicing)
+# value 2 would do [ -10 -8 -6 -4 -2 0 2 4 6 8 10 ] splicing)
 # misc.
 verbose=1 # enable per-cache reports
 # End configuration.
+
+feat=
 
 echo "$0 $@"  # Print the command line for logging
 
@@ -62,24 +64,25 @@ echo "$0 $@"  # Print the command line for logging
 
 
 if [ $# != 2 ]; then
-   echo "Usage: $0 <data> <exp-dir>"
-   echo " e.g.: $0 data/train exp/rbm_pretrain"
-   echo "main options (for others, see top of script file)"
-   echo "  --config <config-file>           # config containing options"
-   echo ""
-   echo "  --nn-depth <N>                   # number of RBM layers"
-   echo "  --hid-dim <N>                    # number of hidden units per layer"
-   echo "  --rbm-iter <N>                   # number of CD-1 iterations per layer"
-   echo "  --dbm-drop-data <float>          # probability of frame-dropping,"
-   echo "                                   # can be used to subsample large datasets"
-   echo "  --rbm-lrate <float>              # learning-rate for Bernoulli-Bernoulli RBMs"
-   echo "  --rbm-lrate-low <float>          # learning-rate for Gaussian-Bernoulli RBM"
-   echo ""
-   echo "  --copy-feats <bool>              # copy features to /tmp, to accelerate training"
-   echo "  --apply-cmvn <bool>              # normalize input features (opt.)"
-   echo "    --norm-vars <bool>               # use variance normalization (opt.)"
-   echo "  --splice <N>                     # splice +/-N frames of input features"
-   exit 1;
+    echo "Usage: $0 <data> <exp-dir>"
+    echo " e.g.: $0 data/train exp/rbm_pretrain"
+    echo "main options (for others, see top of script file)"
+    echo "  --config <config-file>           # config containing options"
+    echo ""
+
+    echo "  --nn-depth <N>                   # number of RBM layers"
+    echo "  --hid-dim <N>                    # number of hidden units per layer"
+    echo "  --rbm-iter <N>                   # number of CD-1 iterations per layer"
+    echo "  --dbm-drop-data <float>          # probability of frame-dropping,"
+    echo "                                   # can be used to subsample large datasets"
+    echo "  --rbm-lrate <float>              # learning-rate for Bernoulli-Bernoulli RBMs"
+    echo "  --rbm-lrate-low <float>          # learning-rate for Gaussian-Bernoulli RBM"
+    echo ""
+    # echo "  --copy-feats <bool>              # copy features to /tmp, to accelerate training"
+    # echo "  --apply-cmvn <bool>              # normalize input features (opt.)"
+    # echo "  --norm-vars <bool>               # use variance normalization (opt.)"
+    echo "  --splice <N>                     # splice +/-N frames of input features"
+    exit 1;
 fi
 
 data=$1
@@ -87,7 +90,7 @@ dir=$2
 
 
 for f in $data/feats.scp; do
-  [ ! -f $f ] && echo "$0: no such file $f" && exit 1;
+    [ ! -f $f ] && echo "$0: no such file $f" && exit 1;
 done
 
 echo "# INFO"
@@ -95,7 +98,7 @@ echo "$0 : Pre-training Deep Belief Network as a stack of RBMs"
 printf "\t dir       : $dir \n"
 printf "\t Train-set : $data \n"
 
-[ -e $dir/${nn_depth}.dbn ] && echo "$0 Skipping, already have $dir/${nn_depth}.dbn" && exit 0
+[ -e $dir/${hid_layers}.dbn ] && echo "$0 Skipping, already have $dir/${hid_layers}.dbn" && exit 0
 
 mkdir -p $dir/log
 
@@ -104,49 +107,61 @@ echo
 echo "# PREPARING FEATURES"
 # shuffle the list
 echo "Preparing train/cv lists"
-cat $data/feats.scp | utils/shuffle_list.pl --srand ${seed:-777} > $dir/train.scp
+cat $data/feats.scp | utils/shuffle_list.pl --srand ${seed:-777} > $dir/feats.scp
+for f in utt2spk utt2utt spk2utt cmvn_spk2utt.scp cmvn_utt2utt.scp
+do
+    cp $data/$f ${dir}/
+done
 # print the list size
-wc -l $dir/train.scp
+wc -l $dir/feats.scp
 
 #re-save the shuffled features, so they are stored sequentially on the disk in /tmp/
-if [ "$copy_feats" == "true" ]; then
-  tmpdir=$(mktemp -d kaldi.XXXX); mv $dir/train.scp $dir/train.scp_non_local
-  utils/nnet/copy_feats.sh $dir/train.scp_non_local $tmpdir $dir/train.scp
-  #remove data on exit...
-  trap "echo \"Removing features tmpdir $tmpdir @ $(hostname)\"; rm -r $tmpdir" EXIT
-fi
+# if [ "$copy_feats" == "true" ]; then
+#   tmpdir=$(mktemp -d kaldi.XXXX); mv $dir/feats.scp $dir/feats.scp_non_local
+#   utils/nnet/copy_feats.sh $dir/feats.scp_non_local $tmpdir $dir/feats.scp
+#   #remove data on exit...
+#   trap "echo \"Removing features tmpdir $tmpdir @ $(hostname)\"; rm -r $tmpdir" EXIT
+# fi
 
 #create a 10k utt subset for global cmvn estimates
-head -n 10000 $dir/train.scp > $dir/train.scp.10k
+head -n 10000 $dir/feats.scp > $dir/feats.scp.10k
 
 
 
 ###### PREPARE FEATURE PIPELINE ######
 
 #read the features
-feats="ark:copy-feats scp:$dir/train.scp ark:- |"
+echo "${feat}" > $dir/feat_opt
+feats=$(echo ${feat} | sed -s 's#SDATA_JOB#'${dir}'#g')
+echo "${feats}" >$dir/feat_string # keep track of feature type 
+
+# feats="ark:copy-feats scp:$dir/feats.scp ark:- |"
 
 #optionally add per-speaker CMVN
-if [ $apply_cmvn == "true" ]; then
-  echo "Will use CMVN statistics : $data/cmvn.scp"
-  [ ! -r $data/cmvn.scp ] && echo "Cannot find cmvn stats $data/cmvn.scp" && exit 1;
-  cmvn="scp:$data/cmvn.scp"
-  feats="$feats apply-cmvn --print-args=false --norm-vars=$norm_vars --utt2spk=ark:$data/utt2spk $cmvn ark:- ark:- |"
-  # keep track of norm_vars option
-  echo "$norm_vars" >$dir/norm_vars 
-else
-  echo "apply_cmvn disabled (per speaker norm. on input features)"
-fi
+# if [ $apply_cmvn == "true" ]; then
+#   echo "Will use CMVN statistics : $data/cmvn.scp"
+#   [ ! -r $data/cmvn.scp ] && echo "Cannot find cmvn stats $data/cmvn.scp" && exit 1;
+#   cmvn="scp:$data/cmvn.scp"
+#   feats="$feats apply-cmvn --print-args=false --norm-vars=$norm_vars --utt2spk=ark:$data/utt2spk $cmvn ark:- ark:- |"
+#   # keep track of norm_vars option
+#   echo "$norm_vars" >$dir/norm_vars 
+# else
+#   echo "apply_cmvn disabled (per speaker norm. on input features)"
+# fi
 
-#optionally add deltas
-if [ "$delta_order" != "" ]; then
-  feats="$feats add-deltas --delta-order=$delta_order ark:- ark:- |"
-  echo "$delta_order" > $dir/delta_order
-fi
+# #optionally add deltas
+# if [ "$delta_order" != "" ]; then
+#   feats="$feats add-deltas --delta-order=$delta_order ark:- ark:- |"
+#   echo "$delta_order" > $dir/delta_order
+# fi
 
 #get feature dim
+# echo -n "Getting feature dim : "
+# feat_dim=$(feat-to-dim --print-args=false scp:$dir/feats.scp -)
+# echo $feat_dim
+
 echo -n "Getting feature dim : "
-feat_dim=$(feat-to-dim --print-args=false scp:$dir/train.scp -)
+feat_dim=$(feat-to-dim "${feats}" -)
 echo $feat_dim
 
 
@@ -161,33 +176,33 @@ echo $feat_dim
 
 
 if [ ! -z "$feature_transform" ]; then
-  echo Using already prepared feature_transform: $feature_transform
-  cp $feature_transform $dir/final.feature_transform
+    echo Using already prepared feature_transform: $feature_transform
+    cp $feature_transform $dir/final.feature_transform
 else
-  if [ ! -z "$feature_transform_proto" ]; then
-    feature_transform=$dir/tr_$(basename $feature_transform_proto)
-    log=$dir/log/feature-transform-initialize.log
-    nnet-initialize --binary=false $feature_transform_proto $feature_transform 2>$log || { cat $log; exit 1; }
-  else
-    # Generate the splice transform
-    echo "Using splice +/- $splice , step $splice_step"
-    feature_transform=$dir/tr_splice$splice-$splice_step.nnet
-    utils/nnet/gen_splice.py --fea-dim=$feat_dim --splice=$splice --splice-step=$splice_step > $feature_transform
-  fi
+    if [ ! -z "$feature_transform_proto" ]; then
+        feature_transform=$dir/tr_$(basename $feature_transform_proto)
+        log=$dir/log/feature-transform-initialize.log
+        nnet-initialize --binary=false $feature_transform_proto $feature_transform 2>$log || { cat $log; exit 1; }
+    else
+        # Generate the splice transform
+        echo "Using splice +/- $splice , step $splice_step"
+        feature_transform=$dir/tr_splice$splice-$splice_step.nnet
+        utils/nnet/gen_splice.py --fea-dim=$feat_dim --splice=$splice --splice-step=$splice_step > $feature_transform
+    fi
 
-  # Renormalize the MLP input to zero mean and unit variance
-  feature_transform_old=$feature_transform
-  feature_transform=${feature_transform%.nnet}_cmvn-g.nnet
-  echo "Renormalizing MLP input features into $feature_transform"
-  nnet-forward --use-gpu=yes \
-    $feature_transform_old "$(echo $feats | sed 's|train.scp|train.scp.10k|')" \
-    ark:- 2>$dir/log/cmvn_glob_fwd.log |\
+    # Renormalize the MLP input to zero mean and unit variance
+    feature_transform_old=$feature_transform
+    feature_transform=${feature_transform%.nnet}_cmvn-g.nnet
+    echo "Renormalizing MLP input features into $feature_transform"
+    nnet-forward --use-gpu=yes \
+        $feature_transform_old "$(echo $feats | sed 's#feats\.scp#feats\.scp\.10k#g')" \
+        ark:- 2>$dir/log/cmvn_glob_fwd.log |\
   compute-cmvn-stats ark:- - | cmvn-to-nnet - - |\
   nnet-concat --binary=false $feature_transform_old - $feature_transform
 
-  # MAKE LINK TO THE FINAL feature_transform, so the other scripts will find it ######
-  [ -f $dir/final.feature_transform ] && unlink $dir/final.feature_transform
-  (cd $dir; ln -s $(basename $feature_transform) final.feature_transform )
+    # MAKE LINK TO THE FINAL feature_transform, so the other scripts will find it ######
+    [ -f $dir/final.feature_transform ] && unlink $dir/final.feature_transform
+    (cd $dir; ln -s $(basename $feature_transform) final.feature_transform )
 fi
 
 
@@ -198,68 +213,71 @@ num_hid=$hid_dim
 
 
 ###### PERFORM THE PRE-TRAINING ######
-for depth in $(seq 1 $nn_depth); do
-  echo
-  echo "# PRE-TRAINING RBM LAYER $depth"
-  RBM=$dir/$depth.rbm
-  [ -f $RBM ] && echo "RBM '$RBM' already trained, skipping." && continue
+for depth in $(seq 1 $hid_layers); do
+    echo
+    echo "# PRE-TRAINING RBM LAYER $depth"
+    RBM=$dir/$depth.rbm
+    [ -f $RBM ] && echo "RBM '$RBM' already trained, skipping." && continue
 
-  #The first RBM needs special treatment, because of Gussian input nodes
-  if [ "$depth" == "1" ]; then
-    #This is Gaussian-Bernoulli RBM
-    #initialize
-    echo "Initializing '$RBM.init'"
-    echo "<NnetProto>
+    #The first RBM needs special treatment, because of Gussian input nodes
+    if [ "$depth" == "1" ]; then
+        #This is Gaussian-Bernoulli RBM
+        #initialize
+        echo "Initializing '$RBM.init'"
+        echo "<NnetProto>
     <Rbm> <InputDim> $num_fea <OutputDim> $num_hid <VisibleType> gauss <HiddenType> bern <ParamStddev> $param_stddev_first
     </NnetProto>
     " > $RBM.proto
-    nnet-initialize $RBM.proto $RBM.init 2>$dir/log/nnet-initialize.$depth.log || exit 1
-    #pre-train
-    echo "Pretraining '$RBM' (reduced lrate and 2x more iters)"
-    rbm-train-cd1-frmshuff --learn-rate=$rbm_lrate_low --l2-penalty=$rbm_l2penalty \
-      --num-iters=$((2*$rbm_iter)) --drop-data=$rbm_drop_data --verbose=$verbose \
-      --feature-transform=$feature_transform \
-      $rbm_extra_opts \
-      $RBM.init "$feats" $RBM 2>$dir/log/rbm.$depth.log || exit 1
-  else
-    #This is Bernoulli-Bernoulli RBM
-    #cmvn stats for init
-    echo "Computing cmvn stats '$dir/$depth.cmvn' for RBM initialization"
-    if [ ! -f $dir/$depth.cmvn ]; then 
-      nnet-forward --use-gpu=yes \
-       "nnet-concat $feature_transform $dir/$((depth-1)).dbn - |" \
-        "$(echo $feats | sed 's|train.scp|train.scp.10k|')" \
-        ark:- 2>$dir/log/cmvn_fwd.$depth.log | \
-      compute-cmvn-stats ark:- - 2>$dir/log/cmvn.$depth.log | \
-      cmvn-to-nnet - $dir/$depth.cmvn || exit 1
+        nnet-initialize $RBM.proto $RBM.init 2>$dir/log/nnet-initialize.$depth.log || exit 1
+        #pre-train
+        echo "Pretraining '$RBM' (reduced lrate and 2x more iters)"
+        rbm-train-cd1-frmshuff --learn-rate=$rbm_lrate_low --l2-penalty=$rbm_l2penalty \
+            --num-iters=$((2*$rbm_iter)) --drop-data=$rbm_drop_data --verbose=$verbose \
+            --feature-transform=$feature_transform \
+            $rbm_extra_opts \
+            $RBM.init "$feats" $RBM 2>$dir/log/rbm.$depth.log || exit 1
     else
-      echo compute-cmvn-stats already done, skipping.
-    fi
-    #initialize
-    echo "Initializing '$RBM.init'"
-    echo "<NnetProto>
+        #This is Bernoulli-Bernoulli RBM
+        #cmvn stats for init
+        echo "Computing cmvn stats '$dir/$depth.cmvn' for RBM initialization"
+        if [ ! -f $dir/$depth.cmvn ]; then 
+            nnet-forward --use-gpu=yes \
+                "nnet-concat $feature_transform $dir/$((depth-1)).dbn - |" \
+                "$(echo $feats | sed 's#feats\.scp#feats\.scp\.10k#')" \
+                ark:- 2>$dir/log/cmvn_fwd.$depth.log | \
+                compute-cmvn-stats ark:- - 2>$dir/log/cmvn.$depth.log | \
+                cmvn-to-nnet - $dir/$depth.cmvn || exit 1
+        else
+            echo compute-cmvn-stats already done, skipping.
+        fi
+        #initialize
+        echo "Initializing '$RBM.init'"
+        echo "<NnetProto>
     <Rbm> <InputDim> $num_hid <OutputDim> $num_hid <VisibleType> bern <HiddenType> bern <ParamStddev> $param_stddev <VisibleBiasCmvnFilename> $dir/$depth.cmvn
     </NnetProto>
     " > $RBM.proto
-    nnet-initialize $RBM.proto $RBM.init 2>$dir/log/nnet-initialize.$depth.log || exit 1
-    #pre-train
-    echo "Pretraining '$RBM'"
-    rbm-train-cd1-frmshuff --learn-rate=$rbm_lrate --l2-penalty=$rbm_l2penalty \
-      --num-iters=$rbm_iter --drop-data=$rbm_drop_data --verbose=$verbose \
-      --feature-transform="nnet-concat $feature_transform $dir/$((depth-1)).dbn - |" \
-      $rbm_extra_opts \
-      $RBM.init "$feats" $RBM 2>$dir/log/rbm.$depth.log || exit 1
-  fi
+        nnet-initialize $RBM.proto $RBM.init 2>$dir/log/nnet-initialize.$depth.log || exit 1
+        #pre-train
+        echo "Pretraining '$RBM'"
+        rbm-train-cd1-frmshuff --learn-rate=$rbm_lrate --l2-penalty=$rbm_l2penalty \
+            --num-iters=$rbm_iter --drop-data=$rbm_drop_data --verbose=$verbose \
+            --feature-transform="nnet-concat $feature_transform $dir/$((depth-1)).dbn - |" \
+            $rbm_extra_opts \
+            $RBM.init "$feats" $RBM 2>$dir/log/rbm.$depth.log || exit 1
+    fi
 
-  #Create DBN stack
-  if [ "$depth" == "1" ]; then
-    rbm-convert-to-nnet --binary=true $RBM $dir/$depth.dbn
-  else 
-    rbm-convert-to-nnet --binary=true $RBM - | \
-    nnet-concat $dir/$((depth-1)).dbn - $dir/$depth.dbn
-  fi
+    #Create DBN stack
+    if [ "$depth" == "1" ]; then
+        rbm-convert-to-nnet --binary=true $RBM $dir/$depth.dbn
+    else 
+        rbm-convert-to-nnet --binary=true $RBM - | \
+            nnet-concat $dir/$((depth-1)).dbn - $dir/$depth.dbn
+    fi
 
 done
+
+
+[ -f ${hid_layers}.dbn ] && ln -s $dir/${hid_layers}.dbn "final.dbn"
 
 echo
 echo "# REPORT"

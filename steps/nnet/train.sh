@@ -22,10 +22,6 @@ init_opts=         # options, passed to the initialization script
 # FEATURE PROCESSING
 copy_feats=true  # resave the train features in the re-shuffled order to tmpdir
 # feature config (applies always)
-apply_cmvn=false # apply normalization to input features?
-norm_vars=false # use variance normalization?
-delta_order=
-# feature_transform:
 splice=5         # temporal splicing
 splice_step=1    # stepsize of the splicing (1 == no gap between frames)
 feat_type=plain
@@ -50,12 +46,10 @@ frame_weights=     # per-frame weights for gradient weighting
 # OTHER
 use_gpu_id= # manually select GPU id to run on, (-1 disables GPU)
 seed=777    # seed value used for training data shuffling and initialization
+feat=
 # End configuration.
 
 echo "$0 $@"  # Print the command line for logging
-
-[ -f path.sh ] && . ./path.sh; 
-
 
 . parse_options.sh || exit 1;
 
@@ -117,8 +111,8 @@ printf "\t CV-set    : $data_cv $alidir_cv \n"
 
 mkdir -p $dir/{log,nnet}
 
-# skip when already trained
-[ -e $dir/final.nnet ] && printf "\nSKIPPING TRAINING... ($0)\nnnet already trained : $dir/final.nnet ($(readlink $dir/final.nnet))\n\n" && exit 0
+# # skip when already trained
+# [ -e $dir/final.nnet ] && printf "\nSKIPPING TRAINING... ($0)\nnnet already trained : $dir/final.nnet ($(readlink $dir/final.nnet))\n\n" && exit 0
 
 ###### PREPARE ALIGNMENTS ######
 echo
@@ -152,29 +146,41 @@ echo
 echo "# PREPARING FEATURES"
 # shuffle the list
 echo "Preparing train/cv lists :"
-cat $data/feats.scp | utils/shuffle_list.pl --srand ${seed:-777} > $dir/train.scp
-cp $data_cv/feats.scp $dir/cv.scp
+cat $data/feats.scp | utils/shuffle_list.pl --srand ${seed:-777} > $data/train.scp
+cp $data_cv/feats.scp $data_cv/cv.scp
+
+# for f in utt2spk utt2utt spk2utt cmvn_spk2utt.scp cmvn_utt2utt.scp
+# do
+#     cp $data/$f ${dir}/
+# done
+
 # print the list sizes
-wc -l $dir/train.scp $dir/cv.scp
+wc -l $data/train.scp $data_cv/cv.scp
 
 # re-save the shuffled features, so they are stored sequentially on the disk in /tmp/
-if [ "$copy_feats" == "true" ]; then
-    tmpdir=$(mktemp -d kaldi.XXXX); mv $dir/train.scp $dir/train.scp_non_local
-    utils/nnet/copy_feats.sh $dir/train.scp_non_local $tmpdir $dir/train.scp
-    #remove data on exit...
-    trap "echo \"Removing features tmpdir $tmpdir @ $(hostname)\"; rm -r $tmpdir" EXIT
-fi
+# if [ "$copy_feats" == "true" ]; then
+#     tmpdir=$(mktemp -d kaldi.XXXX); mv $dir/train.scp $dir/train.scp_non_local
+#     utils/nnet/copy_feats.sh $dir/train.scp_non_local $tmpdir $dir/train.scp
+#     #remove data on exit...
+#     trap "echo \"Removing features tmpdir $tmpdir @ $(hostname)\"; rm -r $tmpdir" EXIT
+# fi
 
 #create a 10k utt subset for global cmvn estimates
-head -n 10000 $dir/train.scp > $dir/train.scp.10k
+head -n 10000 $data/train.scp > $data/train.scp.10k
 
 
 
 ###### PREPARE FEATURE PIPELINE ######
 
 # read the features
-feats_tr="ark:copy-feats scp:$dir/train.scp ark:- |"
-feats_cv="ark:copy-feats scp:$dir/cv.scp ark:- |"
+# feats_tr="ark:copy-feats scp:$dir/train.scp ark:- |"
+# feats_cv="ark:copy-feats scp:$dir/cv.scp ark:- |"
+
+echo "${feat}" > $dir/feat_opt
+feats_tr=$(echo ${feat} | sed -s 's#SDATA_JOB#'${data}'#g'|sed -s 's#feats\.scp#train\.scp#g')
+feats_cv=$(echo ${feat} | sed -s 's#SDATA_JOB#'${data_cv}'#g'|sed -s 's#feats\.scp#cv\.scp#g')
+echo "${feats_tr}" >$dir/feat_tr_string # keep track of feature type 
+echo "${feats_cv}" >$dir/feat_cv_string # keep track of feature type 
 
 # CMVN:
 # optionally import CMVN config from pre-training
@@ -185,31 +191,38 @@ if [ ! -z $feature_transform ]; then
     fi
     echo "Imported CMVN config from pre-training: apply_cmvn=$apply_cmvn; norm_vars=$norm_vars"
 fi
+
 # optionally add per-speaker CMVN
-if [ $apply_cmvn == "true" ]; then
-    echo "Will use CMVN statistics : $data/cmvn.scp, $data_cv/cmvn.scp"
-    [ ! -r $data/cmvn.scp ] && echo "Cannot find cmvn stats $data/cmvn.scp" && exit 1;
-    [ ! -r $data_cv/cmvn.scp ] && echo "Cannot find cmvn stats $data_cv/cmvn.scp" && exit 1;
-    feats_tr="$feats_tr apply-cmvn --print-args=false --norm-vars=$norm_vars --utt2spk=ark:$data/utt2spk scp:$data/cmvn.scp ark:- ark:- |"
-    feats_cv="$feats_cv apply-cmvn --print-args=false --norm-vars=$norm_vars --utt2spk=ark:$data_cv/utt2spk scp:$data_cv/cmvn.scp ark:- ark:- |"
-    # keep track of norm_vars option
-    echo "$norm_vars" >$dir/norm_vars 
-else
-    echo "apply_cmvn is disabled (per speaker norm. on input features)"
-fi
+# if [ $apply_cmvn == "true" ]; then
+#     echo "Will use CMVN statistics : $data/cmvn.scp, $data_cv/cmvn.scp"
+#     [ ! -r $data/cmvn.scp ] && echo "Cannot find cmvn stats $data/cmvn.scp" && exit 1;
+#     [ ! -r $data_cv/cmvn.scp ] && echo "Cannot find cmvn stats $data_cv/cmvn.scp" && exit 1;
+#     feats_tr="$feats_tr apply-cmvn --print-args=false --norm-vars=$norm_vars --utt2spk=ark:$data/utt2spk scp:$data/cmvn.scp ark:- ark:- |"
+#     feats_cv="$feats_cv apply-cmvn --print-args=false --norm-vars=$norm_vars --utt2spk=ark:$data_cv/utt2spk scp:$data_cv/cmvn.scp ark:- ark:- |"
+#     # keep track of norm_vars option
+#     echo "$norm_vars" >$dir/norm_vars 
+# else
+#     echo "apply_cmvn is disabled (per speaker norm. on input features)"
+# fi
 
 # optionally add deltas
-if [ "$delta_order" != "" ]; then
-    feats_tr="$feats_tr add-deltas --delta-order=$delta_order ark:- ark:- |"
-    feats_cv="$feats_cv add-deltas --delta-order=$delta_order ark:- ark:- |"
-    echo "$delta_order" > $dir/delta_order
-    echo "add-deltas (delta_order $delta_order)"
-fi
+# if [ "$delta_order" != "" ]; then
+#     feats_tr="$feats_tr add-deltas --delta-order=$delta_order ark:- ark:- |"
+#     feats_cv="$feats_cv add-deltas --delta-order=$delta_order ark:- ark:- |"
+#     echo "$delta_order" > $dir/delta_order
+#     echo "add-deltas (delta_order $delta_order)"
+# fi
 
 # get feature dim
-echo "Getting feature dim : "
-feat_dim=$(feat-to-dim --print-args=false "$feats_tr" -)
-echo "Feature dim is : $feat_dim"
+# echo "Getting feature dim : "
+# feat_dim=$(feat-to-dim --print-args=false "$feats_tr" -)
+# echo "Feature dim is : $feat_dim"
+
+echo -n "Getting feature dim : "
+feat_dim=$(feat-to-dim "${feats_tr}" -)
+echo $feat_dim
+
+
 
 # Now we will start building complex feature_transform which will 
 # be forwarded in CUDA to have fast run-time.
@@ -294,7 +307,7 @@ else
     feature_transform=${feature_transform%.nnet}_cmvn-g.nnet
     echo "Renormalizing MLP input features into $feature_transform"
     nnet-forward --use-gpu=yes \
-        $feature_transform_old "$(echo $feats_tr | sed 's|train.scp|train.scp.10k|')" \
+        $feature_transform_old "$(echo $feats_tr | sed 's|train\.scp|train\.scp\.10k|')" \
         ark:- 2>$dir/log/nnet-forward-cmvn.log |\
   compute-cmvn-stats ark:- - | cmvn-to-nnet - - |\
   nnet-concat --binary=false $feature_transform_old - $feature_transform

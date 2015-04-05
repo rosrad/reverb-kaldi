@@ -99,8 +99,12 @@ function do_filtering {
   [ -f $srcdir/utt2lang ] && utils/filter_scp.pl $destdir/utt2spk <$srcdir/utt2lang >$destdir/utt2lang
   [ -f $srcdir/wav.scp ] && utils/filter_scp.pl $destdir/utt2spk <$srcdir/wav.scp >$destdir/wav.scp
   [ -f $srcdir/text ] && utils/filter_scp.pl $destdir/utt2spk <$srcdir/text >$destdir/text
+  [ -f $srcdir/utt2utt ] && utils/filter_scp.pl $destdir/utt2spk <$srcdir/utt2utt >$destdir/utt2utt
+  [ -f $srcdir/cmvn_utt2utt.scp ] && utils/filter_scp.pl $destdir/utt2spk <$srcdir/cmvn_utt2utt.scp >$destdir/cmvn_utt2utt.scp
+
   [ -f $srcdir/spk2gender ] && utils/filter_scp.pl $destdir/spk2utt <$srcdir/spk2gender >$destdir/spk2gender
-  [ -f $srcdir/cmvn.scp ] && utils/filter_scp.pl $destdir/spk2utt <$srcdir/cmvn.scp >$destdir/cmvn.scp
+  [ -f $srcdir/cmvn_spk2utt.scp ] && utils/filter_scp.pl $destdir/spk2utt <$srcdir/cmvn_spk2utt.scp >$destdir/cmvn_spk2utt.scp
+
   if [ -f $srcdir/segments ]; then
      utils/filter_scp.pl $destdir/utt2spk <$srcdir/segments >$destdir/segments
      awk '{print $2;}' $destdir/segments | sort | uniq > $destdir/reco # recordings.

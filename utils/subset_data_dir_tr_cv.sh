@@ -69,8 +69,8 @@ if $uttbase; then
   N_tail=$((N-N_head))
 
   #now call the subset_data_dir.sh and fix the directories
-  subset_data_dir.sh --first $srcdir $N_head $trndir
-  subset_data_dir.sh --last $srcdir $N_tail $cvdir
+  utils/subset_data_dir.sh --first $srcdir $N_head $trndir
+  utils/subset_data_dir.sh --last $srcdir $N_tail $cvdir
 
   exit 0;
 fi
@@ -96,8 +96,8 @@ head -n $N_spk_cv $trndir/_tmpf_randspk > $cvdir/_tmpf_cvspk
 tail -n $N_spk_trn $trndir/_tmpf_randspk > $trndir/_tmpf_trainspk
 
 #now call the subset_data_dir.sh 
-subset_data_dir.sh --spk-list $trndir/_tmpf_trainspk $srcdir $trndir
-subset_data_dir.sh --spk-list $cvdir/_tmpf_cvspk $srcdir $cvdir
+utils/subset_data_dir.sh --spk-list $trndir/_tmpf_trainspk $srcdir $trndir
+utils/subset_data_dir.sh --spk-list $cvdir/_tmpf_cvspk $srcdir $cvdir
 
 #clean-up
 rm -f $trndir/_tmpf_randspk $trndir/_tmpf_trainspk $cvdir/_tmpf_cvspk
