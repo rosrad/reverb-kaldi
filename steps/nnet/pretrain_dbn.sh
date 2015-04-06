@@ -59,9 +59,7 @@ feat=
 
 echo "$0 $@"  # Print the command line for logging
 
-[ -f path.sh ] && . ./path.sh;
 . parse_options.sh || exit 1;
-
 
 if [ $# != 2 ]; then
     echo "Usage: $0 <data> <exp-dir>"
@@ -87,6 +85,7 @@ fi
 
 data=$1
 dir=$2
+
 
 
 for f in $data/feats.scp; do
@@ -274,10 +273,12 @@ for depth in $(seq 1 $hid_layers); do
             nnet-concat $dir/$((depth-1)).dbn - $dir/$depth.dbn
     fi
 
+
 done
 
+dst_dbn=$dir/"final.dbn"
 
-[ -f ${hid_layers}.dbn ] && ln -s $dir/${hid_layers}.dbn "final.dbn"
+[ -f $dir/${hid_layers}.dbn ] && ln -sf ${hid_layers}.dbn $dst_dbn
 
 echo
 echo "# REPORT"
