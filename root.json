@@ -1,4 +1,4 @@
-{"Root":"tmp","LM":"bg","ExcludeNode":[6],"DecodeSet":"test","Btrain":false,"Bgraph":false,"Bdecode":true,"Bscore":true}
+{"Root":"tmp","LM":"bg","ExcludeNode":[6,7,11],"DecodeSet":"test","Btrain":true,"Bgraph":true,"Bdecode":true,"Bscore":true}
 {"Root":"tmp","LM":"bg","DecodeSet":"eval","Btrain":false,"Bgraph":false,"Bdecode":true,"Bscore":true}
 {"Root":"tmp","LM":"bg","Btrain":true,"Bgraph":false,"Bdecode":false,"Bscore":false}
 {"Root":"tmp","LM":"bg","DecodeSet":"eval","Btrain":false,"Bgraph":false,"Bdecode":true,"Bscore":true}
